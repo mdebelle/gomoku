@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+//	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
 )
@@ -15,6 +16,16 @@ func run() int {
 	var event sdl.Event
 	var running bool
 	var err error
+//	var context sdl.GLContext
+
+	if err = sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+		panic(err)
+	}
+	defer sdl.Quit()
+
+	// if err = gl.Init(); err != nil {
+	// 	panic(err)
+	// }
 
 	window, err = sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)
@@ -31,12 +42,13 @@ func run() int {
 	}
 	defer renderer.Destroy()
 
-	fmt.Printf("coucou\n")
-
-	err = renderer.SetDrawColor(255, 0, 0, 0)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to Set Draw Color: %s\n", err)
-	}
+	
+	// context, err = sdl.GL_CreateContext(window)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Failed to context: %s\n", err)
+	// }
+	// defer sdl.GL_DeleteContext(context)
+	// gl.ClearColor(0.2, 0.2, 0.3, 1.0)
 
 	running = true
 	for running {
@@ -58,11 +70,17 @@ func run() int {
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
+	//	gl.Clear(gl.COLOR_BUFFER_BIT)
+		_ = renderer.SetDrawColor(236, 240, 241, 0)
+		renderer.Clear()
+		_ = renderer.SetDrawColor(236, 0, 0, 0)
 		err = renderer.DrawLine(10, 10, 20, 20)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to draw a line: %s\n", err)
 			return 3
 		}
+		renderer.Present()
+	//	sdl.GL_SwapWindow(window)
 	}
 
 	return 0

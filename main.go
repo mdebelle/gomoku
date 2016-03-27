@@ -60,12 +60,28 @@ func checkRules(values [19][19]int , nb int, y int, x int) ([19][19]int, int) {
 
 	success := true
 
-	for i:=0; i > -5 ; i-- {
+	var limit int
+
+	if x - 5 < 0 || y - 5 < 0 {
+		if x > y {
+			limit = 0 - y
+		} else {
+			limit = 0 - x
+		}
+	} else {
+		limit = -5
+	}
+
+	fmt.Printf("limit is %d\n", limit)
+
+	for i := limit ; i < (limit + 5); i++ {
+		fmt.Printf("x[%d] y[%d]\n", y+i, x+i)
 		if values[y+i][x+i] != nb {
 			success = false
 			break
 		}
 	}
+
 	if success == true {
 		return values, 1
 	}

@@ -78,6 +78,46 @@ func checkRules(values [19][19]int, nb int, y int, x int) ([19][19]int, int) {
 	return values, 0
 }
 
+func gridAnalyse(values [19][19]int, nb int) (int, int) {
+	
+	f := func (incx, incy , x, y int) int {
+		x, y = x + incx, y + incy
+		for i := 0; i < 4; i++ {
+			if !checkBounds(x, y) || values[y][x] != nb {
+				return i
+			}
+			x += incx
+			y += incy
+		}
+		return 5
+	}
+
+	betterx, bettery := -1, -1
+	max := 0
+
+	for i := 0; i < 19; i++ {
+		for j := 0; j < 19; j++ {
+			
+			if (values[i][j] == 0) {
+				tmp := f(-1, -1, j, i) + f(1, 1, j, i) + f(1, -1, j, i) + f(-1, 1, j, i) + f(0, -1, j, i) + f(0, 1, j, i) + f(-1, 0, j, i) + f(1, 0, j, i)
+				if tmp > max { 
+					max = tmp
+					bettery = i
+					betterx = j
+				}
+			}
+		}
+	}
+	if (betterx < 0) {
+
+		betterx = rand.Int() % 19
+		bettery = rand.Int() % 19
+	}	
+
+	return betterx, bettery
+}
+
+
 func run() int {
 
 	var event sdl.Event
@@ -206,9 +246,9 @@ func run() int {
 		}
 
 		if (play == false && stop == false) {
-	
-			x := rand.Int() % 19
-			y := rand.Int() % 19
+
+
+			x, y := gridAnalyse(values, 2)
 
 			if values[y][x] == 0 {
 				var rules int

@@ -8,6 +8,12 @@ import (
 	"os"
 )
 
+const (
+	empty = 0
+	player_one = 1
+	player_two = -1
+)
+
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int = 800, 800
 
@@ -26,12 +32,12 @@ func drawClic(renderer *sdl.Renderer, values [19][19]int) {
 
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
-			if values[j][i] == 1{
+			if values[j][i] == player_one {
 				_ = renderer.SetDrawColor(0, 236, 0, 0)
 				for k := 0; k < 20; k++ {
 					_ = renderer.DrawLine(((i+1)*40)-10, ((j+1)*40)+(k-10), ((i+1)*40)+10, ((j+1)*40)+(k-10))
 				}
-			} else if values[j][i] == 2 {
+			} else if values[j][i] == player_two {
 				_ = renderer.SetDrawColor(0, 0, 236, 0)
 				for k := 0; k < 20; k++ {
 					_ = renderer.DrawLine(((i+1)*40)-10, ((j+1)*40)+(k-10), ((i+1)*40)+10, ((j+1)*40)+(k-10))
@@ -57,7 +63,7 @@ func checkBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
 
-func checkRules(values [19][19]int, nb int, y int, x int) ([19][19]int, int) {
+func checkRules(values [19][19]int, nb int, y int, x int) ([19][19]int, bool) {
 
 	f := func (incx, incy int) int {
 		x, y := x + incx, y + incy
@@ -73,14 +79,44 @@ func checkRules(values [19][19]int, nb int, y int, x int) ([19][19]int, int) {
 
 	if f(-1, -1) + f(1, 1) >= 4 || f(1, -1) + f(-1, 1) >= 4 ||
 		f(0, -1) + f(0, 1) >= 4 || f(-1, 0) + f(1, 0) >= 4 {
-		return values, 1
+		return values, true
 	}
-	return values, 0
+	return values, false
 }
+
+
+func checkCaptures(values *[19][19]int, nb int, y int, x int)  {
+
+	fmt.Printf("Played posiiton [%d][%d]\n", x, y)
+
+	forcapture := func (incx, incy int) {
+		if !checkBounds(x + 3 * incx, y + 3 * incy) {
+			return
+		}
+		if  values[y + incy][x + incx] == -nb &&
+			values[y + 2 * incy][x + 2 * incx] == -nb &&
+		 	values[y + 3 * incy][x + 3 * incx] == nb {
+				values[y + incy][x + incx] = 0
+				values[y + 2 * incy][x + 2 * incx] = 0
+		}
+	}
+
+	forcapture(-1, -1)
+	forcapture(1, 1)
+	forcapture(1, -1)
+	forcapture(-1, 1)
+	forcapture(0, -1)
+	forcapture(0, 1)
+	forcapture(-1, 0)
+	forcapture(1, 0)
+
+	return
+}
+
 
 func gridAnalyse(values [19][19]int, nb int) (int, int) {
 	
-	f := func (incx, incy , x, y int) int {
+	f := func (incx, incy , x, y, nb int) int {
 		x, y = x + incx, y + incy
 		for i := 0; i < 4; i++ {
 			if !checkBounds(x, y) || values[y][x] != nb {
@@ -99,9 +135,42 @@ func gridAnalyse(values [19][19]int, nb int) (int, int) {
 		for j := 0; j < 19; j++ {
 			
 			if (values[i][j] == 0) {
-				tmp := f(-1, -1, j, i) + f(1, 1, j, i) + f(1, -1, j, i) + f(-1, 1, j, i) + f(0, -1, j, i) + f(0, 1, j, i) + f(-1, 0, j, i) + f(1, 0, j, i)
-				if tmp > max { 
+				var t int
+
+				tmp := f(-1, -1, j, i, player_two) + f(1, 1, j, i, player_two)
+				t = f(1, -1, j, i, player_two) + f(-1, 1, j, i, player_two)
+				if t > tmp {
+					tmp = t
+				}
+				t = f(0, -1, j, i, player_two) + f(0, 1, j, i, player_two)
+				if t > tmp {
+					tmp = t
+				}
+				t = f(-1, 0, j, i, player_two) + f(1, 0, j, i, player_two)
+				if t > tmp {
+					tmp = t
+				}
+
+				t = (f(-1, -1, j, i, player_one) + f(1, 1, j, i, player_one)) * 2
+				if t > tmp {
+					tmp = t
+				}
+				t = (f(1, -1, j, i, player_one) + f(-1, 1, j, i, player_one)) * 2
+				if t > tmp {
+					tmp = t
+				}
+				t = (f(0, -1, j, i, player_one) + f(0, 1, j, i, player_one)) * 2
+				if t > tmp {
+					tmp = t
+				}
+				t = (f(-1, 0, j, i, player_one) + f(1, 0, j, i, player_one)) * 2
+				if t > tmp {
+					tmp = t
+				}
+
+				if tmp > max {
 					max = tmp
+					fmt.Printf("play position x[%d]y[%d] = %d\n", i, j, max)
 					bettery = i
 					betterx = j
 				}
@@ -148,48 +217,6 @@ func run() int {
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}}
 
 
-	// scoreIA := [19][19]int{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}}
-
-
-	// scoreStupid := [19][19]int{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	// 						{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}}
-
-
 
 	window, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)
@@ -208,7 +235,7 @@ func run() int {
 
 	running = true
 	stop = false
-	play = true
+	play = false
 	for running {
 
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -225,11 +252,12 @@ func run() int {
 					x:= mousePositionToGrid(float64(t.X))
 					
 					if values[y][x] == 0 {
-						var rules int
-						values[y][x] = 1
+						var rules bool
+						values[y][x] = player_one
 						fmt.Printf("[%d]\n", values[y][x])
-						values, rules = checkRules(values, 1, y, x)
-						if rules == 1 {
+						values, rules = checkRules(values, player_one, y, x)
+						checkCaptures(&values, player_one, y, x)
+						if rules {
 							fmt.Printf("C'est gagne pour le joueur stupide\n")
 							stop = true
 						}
@@ -248,14 +276,15 @@ func run() int {
 		if (play == false && stop == false) {
 
 
-			x, y := gridAnalyse(values, 2)
+			x, y := gridAnalyse(values, player_two)
 
 			if values[y][x] == 0 {
-				var rules int
-				values[y][x] = 2
+				var rules bool
+				values[y][x] = player_two
 				fmt.Printf("[%d]\n", values[y][x])
-				values, rules = checkRules(values, 2, y, x)
-				if rules == 1 {
+				values, rules = checkRules(values, player_two, y, x)
+				checkCaptures(&values, player_two, y, x)
+				if rules {
 					fmt.Printf("C'est gagne pour l'iA\n")
 					stop = true
 				}

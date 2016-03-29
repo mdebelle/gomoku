@@ -63,8 +63,7 @@ func checkBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
 
-func checkRules(values [19][19]int, nb int, y int, x int) ([19][19]int, bool) {
-
+func checkVictory(values *[19][19]int, nb int, y int, x int) bool {
 	f := func (incx, incy int) int {
 		x, y := x + incx, y + incy
 		for i := 0; i < 4; i++ {
@@ -76,31 +75,55 @@ func checkRules(values [19][19]int, nb int, y int, x int) ([19][19]int, bool) {
 		}
 		return 5
 	}
-
-	if f(-1, -1) + f(1, 1) >= 4 || f(1, -1) + f(-1, 1) >= 4 ||
-		f(0, -1) + f(0, 1) >= 4 || f(-1, 0) + f(1, 0) >= 4 {
-		return values, true
+	if 	(f(-1, -1) + f(1, 1) >= 4 && !checkCaptures(values, nb, x, y, 1, 1)) ||
+		(f(1, -1) + f(-1, 1) >= 4 && !checkCaptures(values, nb, x, y, 1, -1)) ||
+		(f(0, -1) + f(0, 1) >= 4 && !checkCaptures(values, nb, x, y, 0, 1)) ||
+		(f(-1, 0) + f(1, 0) >= 4 && !checkCaptures(values, nb, x, y, 1, 0)) {
+		return true
 	}
-	return values, false
+	return false
 }
 
+func checkCaptures(values *[19][19]int, nb, x, y, incx, incy int) bool {
+	checkAxis := func (x, y, incx, incy int) bool {
+		if !checkBounds(x - incx, y - incy) || !checkBounds(x + 2 * incx, y + 2 * incy) {
+			return false
+		}
+		return 	values[y + incy][x + incx] == nb &&
+			((values[y + 2 * incy][x + 2 * incx] == -nb && values[y - incy][x - incx] == 0) ||
+			 (values[y + 2 * incy][x + 2 * incx] == 0   && values[y - incy][x - incx] == -nb))
+	}
+	f := func (incx, incy int) bool {
+		x, y := x + incx, y + incy
+		for i := 0; i < 4; i++ {
+			if !checkBounds(x, y) || values[y][x] != nb {
+				return false
+			}
+			
+			if	checkAxis(x, y, -1, -1) || checkAxis(x, y, 1, 1) || checkAxis(x, y, 1, -1) || checkAxis(x, y, -1, 1) || checkAxis(x, y, 0, -1) || checkAxis(x, y, 0, 1) || checkAxis(x, y, -1, 0) || checkAxis(x, y, 1, 0) {
+				return true
+			}
+			x += incx
+			y += incy
+		}
+		return false
+	}
 
-func checkCaptures(values *[19][19]int, nb int, y int, x int)  {
+	return f(incx, incy) || f(-incx, -incy)
+}
 
-	fmt.Printf("Played posiiton [%d][%d]\n", x, y)
-
+func doCaptures(values *[19][19]int, nb int, y int, x int)  {
 	forcapture := func (incx, incy int) {
 		if !checkBounds(x + 3 * incx, y + 3 * incy) {
 			return
 		}
-		if  values[y + incy][x + incx] == -nb &&
+		if	values[y + incy][x + incx] == -nb &&
 			values[y + 2 * incy][x + 2 * incx] == -nb &&
 		 	values[y + 3 * incy][x + 3 * incx] == nb {
 				values[y + incy][x + incx] = 0
 				values[y + 2 * incy][x + 2 * incx] = 0
 		}
 	}
-
 	forcapture(-1, -1)
 	forcapture(1, 1)
 	forcapture(1, -1)
@@ -170,7 +193,6 @@ func gridAnalyse(values [19][19]int, nb int) (int, int) {
 
 				if tmp > max {
 					max = tmp
-					fmt.Printf("play position x[%d]y[%d] = %d\n", i, j, max)
 					bettery = i
 					betterx = j
 				}
@@ -194,7 +216,7 @@ func run() int {
 	var stop bool
 	var err error
 
-	var play bool
+	var player int
 
 	values := [19][19]int { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -235,7 +257,7 @@ func run() int {
 
 	running = true
 	stop = false
-	play = false
+	player = 1
 	for running {
 
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -247,21 +269,20 @@ func run() int {
 				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
 					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 
-				if play == true && t.Type == 1025 && stop == false{
+				if t.Type == 1025 && stop == false{
 					y:= mousePositionToGrid(float64(t.Y))
 					x:= mousePositionToGrid(float64(t.X))
 					
 					if values[y][x] == 0 {
-						var rules bool
-						values[y][x] = player_one
+						values[y][x] = player
 						fmt.Printf("[%d]\n", values[y][x])
-						values, rules = checkRules(values, player_one, y, x)
-						checkCaptures(&values, player_one, y, x)
-						if rules {
+						iswin := checkVictory(&values, player, y, x)
+						doCaptures(&values, player, y, x)
+						if iswin {
 							fmt.Printf("C'est gagne pour le joueur stupide\n")
 							stop = true
 						}
-						play = false
+						player = -player
 					}
 				} else {
 					fmt.Printf("Not your turn\n")
@@ -273,24 +294,23 @@ func run() int {
 			}
 		}
 
-		if (play == false && stop == false) {
+		// if (play == false && stop == false) {
 
 
-			x, y := gridAnalyse(values, player_two)
+		// 	x, y := gridAnalyse(values, player_two)
 
-			if values[y][x] == 0 {
-				var rules bool
-				values[y][x] = player_two
-				fmt.Printf("[%d]\n", values[y][x])
-				values, rules = checkRules(values, player_two, y, x)
-				checkCaptures(&values, player_two, y, x)
-				if rules {
-					fmt.Printf("C'est gagne pour l'iA\n")
-					stop = true
-				}
-				play = true
-			}
-		}
+		// 	if values[y][x] == 0 {
+		// 		values[y][x] = player_two
+		// 		fmt.Printf("[%d]\n", values[y][x])
+		// 		iswin := checkVictory(&values, player_two, y, x)
+		// 		doCaptures(&values, player_two, y, x)
+		// 		if iswin {
+		// 			fmt.Printf("C'est gagne pour l'iA\n")
+		// 			stop = true
+		// 		}
+		// 		play = true
+		// 	}
+		// }
 
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()

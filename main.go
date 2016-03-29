@@ -15,7 +15,7 @@ const (
 )
 
 var winTitle string = "Go-SDL2 Events"
-var winWidth, winHeight int = 800, 800
+var winWidth, winHeight int = 800, 880
 
 func drawGrid(renderer *sdl.Renderer) {
 
@@ -28,7 +28,7 @@ func drawGrid(renderer *sdl.Renderer) {
 }
 
 
-func drawClic(renderer *sdl.Renderer, values [19][19]int) {
+func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
 
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
@@ -44,7 +44,22 @@ func drawClic(renderer *sdl.Renderer, values [19][19]int) {
 				}
 			}
 		}
-	}	
+	}
+
+	_ = renderer.SetDrawColor(0, 236, 0, 0)
+	for i := 0; i < capture[0]; i++ {
+		for k := 0; k < 20; k++ {
+			_ = renderer.DrawLine(((i+1)*40)-10, 800+(k-10), ((i+1)*40)+10, 800+(k-10))
+		}
+	}
+
+	_ = renderer.SetDrawColor(0, 0, 236, 0)
+	for i := 0; i < capture[2]; i++ {
+		for k := 0; k < 20; k++ {
+			_ = renderer.DrawLine(((i+1)*40)-10, 840+(k-10), ((i+1)*40)+10, 840+(k-10))
+		}
+	}
+
 }
 
 func mousePositionToGrid(val float64) int {
@@ -112,28 +127,24 @@ func checkCaptures(values *[19][19]int, nb, x, y, incx, incy int) bool {
 	return f(incx, incy) || f(-incx, -incy)
 }
 
-func doCaptures(values *[19][19]int, nb int, y int, x int)  {
-	forcapture := func (incx, incy int) {
+func doCaptures(values *[19][19]int, nb int, y int, x int) int {
+	forcapture := func (incx, incy int) int {
 		if !checkBounds(x + 3 * incx, y + 3 * incy) {
-			return
+			return 0
 		}
 		if	values[y + incy][x + incx] == -nb &&
 			values[y + 2 * incy][x + 2 * incx] == -nb &&
 		 	values[y + 3 * incy][x + 3 * incx] == nb {
 				values[y + incy][x + incx] = 0
 				values[y + 2 * incy][x + 2 * incx] = 0
+				return 2
 		}
+		return 0
 	}
-	forcapture(-1, -1)
-	forcapture(1, 1)
-	forcapture(1, -1)
-	forcapture(-1, 1)
-	forcapture(0, -1)
-	forcapture(0, 1)
-	forcapture(-1, 0)
-	forcapture(1, 0)
-
-	return
+	return  forcapture(-1, -1) + forcapture(1, 1) +
+			forcapture(1, -1) + forcapture(-1, 1) +
+			forcapture(0, -1) + forcapture(0, 1) +
+			forcapture(-1, 0) + forcapture(1, 0)
 }
 
 
@@ -218,6 +229,7 @@ func run() int {
 
 	var player int
 
+	capture := [3]int {0, 0, 0}
 	values := [19][19]int { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -277,9 +289,11 @@ func run() int {
 						values[y][x] = player
 						fmt.Printf("[%d]\n", values[y][x])
 						iswin := checkVictory(&values, player, y, x)
-						doCaptures(&values, player, y, x)
-						if iswin {
-							fmt.Printf("C'est gagne pour le joueur stupide\n")
+						
+						capture[player + 1] += doCaptures(&values, player, y, x)
+						
+						if iswin || capture[player + 1] >= 10 {
+							fmt.Printf("C'est gagne pour le joueur stupide %d\n", player)
 							stop = true
 						}
 						player = -player
@@ -315,7 +329,7 @@ func run() int {
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()
 		drawGrid(renderer)
-		drawClic(renderer, values)
+		drawClic(renderer, &values, &capture)
 		renderer.Present()
 	}
 

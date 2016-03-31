@@ -55,16 +55,6 @@ func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
 	}
 }
 
-func mousePositionToGrid(val float64) int {
-	t := int(math.Floor((val - 20) / 40))
-	if t < 0 {
-		t = 0
-	} else if t > 18{
-		t = 18
-	}
-	return t
-}
-
 func checkBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
@@ -104,8 +94,10 @@ func checkCaptures(values *[19][19]int, nb, x, y, incx, incy int) bool {
 		for i := 0; i < 4; i++ {
 			if !checkBounds(x, y) || values[y][x] != nb {
 				return false
-			}		
-			if	checkAxis(x, y, -1, -1) || checkAxis(x, y, 1, 1) || checkAxis(x, y, 1, -1) || checkAxis(x, y, -1, 1) || checkAxis(x, y, 0, -1) || checkAxis(x, y, 0, 1) || checkAxis(x, y, -1, 0) || checkAxis(x, y, 1, 0) {
+			} else if checkAxis(x, y, -1, -1) || checkAxis(x, y, 1, 1) ||
+				checkAxis(x, y, 1, -1) || checkAxis(x, y, -1, 1) ||
+				checkAxis(x, y, 0, -1) || checkAxis(x, y, 0, 1) ||
+				checkAxis(x, y, -1, 0) || checkAxis(x, y, 1, 0) {
 				return true
 			}
 			x += incx
@@ -134,6 +126,29 @@ func doCaptures(values *[19][19]int, nb int, y int, x int) int {
 			forcapture(1, -1) + forcapture(-1, 1) +
 			forcapture(0, -1) + forcapture(0, 1) +
 			forcapture(-1, 0) + forcapture(1, 0)
+}
+
+func checkRules(values *[19][19]int, capture *[3]int, x, y, player int) int {
+	values[y][x] = player
+	victory := checkVictory(values, player, y, x)
+	if victory == true {
+		return 0
+	}
+	capture[player + 1] += doCaptures(values, player, y, x)
+	if capture[player + 1] >= 10 {
+		return 0
+	}
+	return -player
+}
+
+func mousePositionToGrid(val float64) int {
+	t := int(math.Floor((val - 20) / 40))
+	if t < 0 {
+		t = 0
+	} else if t > 18{
+		t = 18
+	}
+	return t
 }
 
 func gridAnalyse(values [19][19]int, nb int) (int, int) {
@@ -201,7 +216,6 @@ func gridAnalyse(values [19][19]int, nb int) (int, int) {
 func run() int {
 	var event sdl.Event
 	var running bool
-	var stop bool
 	var err error
 	var player int
 	capture := [3]int {0, 0, 0}
@@ -238,7 +252,6 @@ func run() int {
 	}
 	defer renderer.Destroy()
 	running = true
-	stop = false
 	player = 1
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -246,44 +259,24 @@ func run() int {
 			case *sdl.QuitEvent:
 				running = false
 			case *sdl.MouseButtonEvent:
-				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
-					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if t.Type == 1025 && stop == false{
+				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
+				if player == player_one && t.Type == 1025 {
 					y:= mousePositionToGrid(float64(t.Y))
 					x:= mousePositionToGrid(float64(t.X))
 					if values[y][x] == 0 {
-						values[y][x] = player
-						fmt.Printf("[%d]\n", values[y][x])
-						iswin := checkVictory(&values, player, y, x)
-						capture[player + 1] += doCaptures(&values, player, y, x)		
-						if iswin || capture[player + 1] >= 10 {
-							fmt.Printf("C'est gagne pour le joueur stupide %d\n", player)
-							stop = true
-						}
-						player = -player
+						player = checkRules(&values, &capture, x, y, player)
 					}
-				} else {
-					fmt.Printf("Not your turn\n")
 				}
 			case *sdl.KeyUpEvent:
-				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
-					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-		// if (play == false && stop == false) {
-		// 	x, y := gridAnalyse(values, player_two)
-		// 	if values[y][x] == 0 {
-		// 		values[y][x] = player_two
-		// 		fmt.Printf("[%d]\n", values[y][x])
-		// 		iswin := checkVictory(&values, player_two, y, x)
-		// 		doCaptures(&values, player_two, y, x)
-		// 		if iswin {
-		// 			fmt.Printf("C'est gagne pour l'iA\n")
-		// 			stop = true
-		// 		}
-		// 		play = true
-		// 	}
-		// }
+		if (player == player_two) {
+			x, y := gridAnalyse(values, player_two)
+			if values[y][x] == 0 {
+				player = checkRules(&values, &capture, x, y, player)
+			}
+		}
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()
 		drawGrid(renderer)

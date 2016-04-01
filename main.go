@@ -6,54 +6,32 @@ import (
 	"math/rand"
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
+	"time"
 )
 
 const (
 	empty = 0
 	player_one = 1
 	player_two = -1
+	searchMaxTime = 0.5 
+	searchMaxDepth = 20 
+	
+	winPlayer = 1
+	capturedByPlayer = 2
+	nothing = 3
+	capturedByIA = 4
+	winIA = 5
+
 )
+
+type searchParam struct {
+	board 		*[19][19]int
+	stoped		bool
+	stopTime	time.Time
+}
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int = 800, 880
-
-func drawGrid(renderer *sdl.Renderer) {
-	_ = renderer.SetDrawColor(236, 0, 0, 0)
-	for i := 1; i < 20; i++ {
-		_ = renderer.DrawLine(40, 40 * i, 40 * 19, 40 * i)
-		_ = renderer.DrawLine(40 *i, 40, 40 * i, 40 * 19)
-	}	
-}
-
-func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
-	for i := 0; i < 19; i++ {
-		for j := 0; j < 19; j++ {
-			if values[j][i] == player_one {
-				_ = renderer.SetDrawColor(0, 236, 0, 0)
-				for k := 0; k < 20; k++ {
-					_ = renderer.DrawLine(((i+1)*40)-10, ((j+1)*40)+(k-10), ((i+1)*40)+10, ((j+1)*40)+(k-10))
-				}
-			} else if values[j][i] == player_two {
-				_ = renderer.SetDrawColor(0, 0, 236, 0)
-				for k := 0; k < 20; k++ {
-					_ = renderer.DrawLine(((i+1)*40)-10, ((j+1)*40)+(k-10), ((i+1)*40)+10, ((j+1)*40)+(k-10))
-				}
-			}
-		}
-	}
-	_ = renderer.SetDrawColor(0, 236, 0, 0)
-	for i := 0; i < capture[0]; i++ {
-		for k := 0; k < 20; k++ {
-			_ = renderer.DrawLine(((i+1)*40)-10, 800+(k-10), ((i+1)*40)+10, 800+(k-10))
-		}
-	}
-	_ = renderer.SetDrawColor(0, 0, 236, 0)
-	for i := 0; i < capture[2]; i++ {
-		for k := 0; k < 20; k++ {
-			_ = renderer.DrawLine(((i+1)*40)-10, 840+(k-10), ((i+1)*40)+10, 840+(k-10))
-		}
-	}
-}
 
 func checkBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
@@ -151,7 +129,7 @@ func mousePositionToGrid(val float64) int {
 	return t
 }
 
-func gridAnalyse(values [19][19]int, nb int) (int, int) {
+func gridAnalyse(values *[19][19]int, nb int) (int, int) {
 	f := func (incx, incy , x, y, nb int) int {
 		x, y = x + incx, y + incy
 		for i := 0; i < 4; i++ {
@@ -213,6 +191,101 @@ func gridAnalyse(values [19][19]int, nb int) (int, int) {
 	return betterx, bettery
 }
 
+
+func search(values *[19][19]int, player int) (int, int) {
+	max := 0
+	copy := *values
+	var x, y int
+
+	for i := 0; i < 19; i++ {
+		for j := 0; j < 19; j++ {
+			if copy[i][j] == 0 {
+				copy[i][j] = player
+				pts := 0
+				if checkVictory(&copy, player, i, j) {
+					return j, i
+				} else if doCaptures(&copy, player, i, j) > 0 {
+					pts = capturedByIA
+				}
+				p := minimise(&copy, -player)
+				if (pts < p) {
+					pts = p
+				}
+				if max < pts {
+					fmt.Printf("coordonees [%d][%d] = %d \n", j, i, pts)
+					max = pts
+					x = j
+					y = i
+				}
+				copy = *values
+			}
+		}
+	}
+	return x, y
+}
+
+func minimise(values *[19][19]int, player int) int {
+	min := 20
+	copy := *values
+
+	for i := 0; i < 19; i++ {
+		for j := 0; j < 19; j++ {
+			if copy[i][j] == 0 {
+				copy[i][j] = player
+				pts := 20
+				if checkVictory(&copy, player, i, j) {
+					return winPlayer
+				} else if doCaptures(&copy, player, i, j) > 0 {
+					pts = capturedByPlayer
+				}
+				p := maximise(&copy, -player)
+				if (pts > p) {
+					pts = p
+				}
+				if min > pts {
+					min = pts
+				}
+				copy = *values
+			}
+		}
+	}
+	if min == 20 {
+		return nothing
+	}
+	return min
+}
+
+func maximise(values *[19][19]int, player int) int {
+	max := 0
+	copy := *values
+
+	for i := 0; i < 19; i++ {
+		for j := 0; j < 19; j++ {
+			if copy[i][j] == 0 {
+				copy[i][j] = player
+				pts := 0
+				if checkVictory(&copy, player, i, j) {
+					fmt.Printf("%v\n%d %d //%d\n", copy, j, i, player)
+					return winIA
+				} else if doCaptures(&copy, player, i, j) > 0{
+					pts = capturedByIA 
+				} else {
+					pts = nothing
+				}
+				if max < pts {
+					max = pts
+				}
+				copy = *values
+			}
+		}
+	}
+	if max == 0 {
+		return nothing
+	}
+	return max
+}
+
+
 func run() int {
 	var event sdl.Event
 	var running bool
@@ -238,6 +311,7 @@ func run() int {
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}}
+
 	window, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
@@ -263,6 +337,7 @@ func run() int {
 				if player == player_one && t.Type == 1025 {
 					y:= mousePositionToGrid(float64(t.Y))
 					x:= mousePositionToGrid(float64(t.X))
+					fmt.Printf("Player -> x[%d] y [%d]\n", x, y)
 					if values[y][x] == 0 {
 						player = checkRules(&values, &capture, x, y, player)
 					}
@@ -271,8 +346,9 @@ func run() int {
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-		if (player == player_two) {
-			x, y := gridAnalyse(values, player_two)
+		if player == player_two {
+			x, y := search(&values, player)
+			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 			if values[y][x] == 0 {
 				player = checkRules(&values, &capture, x, y, player)
 			}

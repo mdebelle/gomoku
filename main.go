@@ -30,8 +30,15 @@ type searchParam struct {
 	stopTime	time.Time
 }
 
+type mustdo struct {
+	Todo	bool
+	X, Y    int
+}
+
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int = 800, 880
+
+var victoir mustdo
 
 func checkBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
@@ -63,9 +70,20 @@ func checkCaptures(values *[19][19]int, nb, x, y, incx, incy int) bool {
 		if !checkBounds(x - incx, y - incy) || !checkBounds(x + 2 * incx, y + 2 * incy) {
 			return false
 		}
-		return 	values[y + incy][x + incx] == nb &&
-			((values[y + 2 * incy][x + 2 * incx] == -nb && values[y - incy][x - incx] == 0) ||
-			 (values[y + 2 * incy][x + 2 * incx] == 0   && values[y - incy][x - incx] == -nb))
+		if values[y + incy][x + incx] == nb {
+			if values[y + 2 * incy][x + 2 * incx] == -nb && values[y - incy][x - incx] == 0 {
+				victoir.X = x - incx
+				victoir.Y = y - incy
+				victoir.Todo = true
+				return true
+			} else if values[y + 2 * incy][x + 2 * incx] == 0   && values[y - incy][x - incx] == -nb {
+				victoir.X = x + 2 * incx
+				victoir.Y = y + 2 * incy
+				victoir.Todo = true
+				return true
+			}
+		}
+		return false
 	}
 	f := func (incx, incy int) bool {
 		x, y := x + incx, y + incy
@@ -110,10 +128,12 @@ func checkRules(values *[19][19]int, capture *[3]int, x, y, player int) int {
 	values[y][x] = player
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
+		fmt.Printf("What??\n")
 		return 0
 	}
 	capture[player + 1] += doCaptures(values, player, y, x)
 	if capture[player + 1] >= 10 {
+		fmt.Printf("What this??\n")
 		return 0
 	}
 	return -player
@@ -192,105 +212,13 @@ func gridAnalyse(values *[19][19]int, nb int) (int, int) {
 }
 
 
-func search(values *[19][19]int, player int) (int, int) {
-	max := 0
-	copy := *values
-	var x, y int
-
-	for i := 0; i < 19; i++ {
-		for j := 0; j < 19; j++ {
-			if copy[i][j] == 0 {
-				copy[i][j] = player
-				pts := 0
-				if checkVictory(&copy, player, i, j) {
-					return j, i
-				} else if doCaptures(&copy, player, i, j) > 0 {
-					pts = capturedByIA
-				}
-				p := minimise(&copy, -player)
-				if (pts < p) {
-					pts = p
-				}
-				if max < pts {
-					fmt.Printf("coordonees [%d][%d] = %d \n", j, i, pts)
-					max = pts
-					x = j
-					y = i
-				}
-				copy = *values
-			}
-		}
-	}
-	return x, y
-}
-
-func minimise(values *[19][19]int, player int) int {
-	min := 20
-	copy := *values
-
-	for i := 0; i < 19; i++ {
-		for j := 0; j < 19; j++ {
-			if copy[i][j] == 0 {
-				copy[i][j] = player
-				pts := 20
-				if checkVictory(&copy, player, i, j) {
-					return winPlayer
-				} else if doCaptures(&copy, player, i, j) > 0 {
-					pts = capturedByPlayer
-				}
-				p := maximise(&copy, -player)
-				if (pts > p) {
-					pts = p
-				}
-				if min > pts {
-					min = pts
-				}
-				copy = *values
-			}
-		}
-	}
-	if min == 20 {
-		return nothing
-	}
-	return min
-}
-
-func maximise(values *[19][19]int, player int) int {
-	max := 0
-	copy := *values
-
-	for i := 0; i < 19; i++ {
-		for j := 0; j < 19; j++ {
-			if copy[i][j] == 0 {
-				copy[i][j] = player
-				pts := 0
-				if checkVictory(&copy, player, i, j) {
-					fmt.Printf("%v\n%d %d //%d\n", copy, j, i, player)
-					return winIA
-				} else if doCaptures(&copy, player, i, j) > 0{
-					pts = capturedByIA 
-				} else {
-					pts = nothing
-				}
-				if max < pts {
-					max = pts
-				}
-				copy = *values
-			}
-		}
-	}
-	if max == 0 {
-		return nothing
-	}
-	return max
-}
-
 
 func run() int {
 	var event sdl.Event
 	var running bool
 	var err error
 	var player int
+	victoir.Todo = false
 	capture := [3]int {0, 0, 0}
 	values := [19][19]int { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -327,6 +255,7 @@ func run() int {
 	defer renderer.Destroy()
 	running = true
 	player = 1
+	var px, py int
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
@@ -335,11 +264,18 @@ func run() int {
 			case *sdl.MouseButtonEvent:
 				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 				if player == player_one && t.Type == 1025 {
-					y:= mousePositionToGrid(float64(t.Y))
-					x:= mousePositionToGrid(float64(t.X))
-					fmt.Printf("Player -> x[%d] y [%d]\n", x, y)
-					if values[y][x] == 0 {
-						player = checkRules(&values, &capture, x, y, player)
+					py = mousePositionToGrid(float64(t.Y))
+					px = mousePositionToGrid(float64(t.X))
+					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
+					if victoir.Todo == true {
+						if px == victoir.X && py == victoir.Y {
+							player = checkRules(&values, &capture, px, py, player)
+							victoir.Todo = false
+						} else {
+							fmt.Printf("you must play in [%d][%d]\n", victoir.X, victoir.Y)
+						}
+					} else if values[py][px] == 0 {
+						player = checkRules(&values, &capture, px, py, player)
 					}
 				}
 			case *sdl.KeyUpEvent:
@@ -347,11 +283,18 @@ func run() int {
 			}
 		}
 		if player == player_two {
-			x, y := search(&values, player)
-			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
-			if values[y][x] == 0 {
-				player = checkRules(&values, &capture, x, y, player)
+			if victoir.Todo == true {
+				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
+				player = checkRules(&values, &capture, victoir.X, victoir.Y, player)
+				victoir.Todo = false	
+			} else {
+				x, y := search(&values, player, px, py, &capture)
+				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
+				if values[y][x] == 0 {
+					player = checkRules(&values, &capture, x, y, player)
+				}
 			}
+
 		}
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()

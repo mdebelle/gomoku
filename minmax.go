@@ -30,11 +30,11 @@ func search(values *[19][19]int, player, x, y, depth int, capture *[3]int) (int,
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}}
 
-//	for incy := y - 5; incy < y + 6; incy++ {
-	for incy := 0; incy < 19; incy++ {
+	for incy := y - 5; incy < y + 6; incy++ {
+//	for incy := 0; incy < 19; incy++ {
 		if incy < 0 { incy = 0 } else if incy > 18 { break }
-//		for incx := x - 4; incx < x + 5; incx++ {
-		for incx := 0; incx < 19; incx++ {
+		for incx := x - 4; incx < x + 5; incx++ {
+//		for incx := 0; incx < 19; incx++ {
 			if incx < 0 { incx = 0 } else if incx > 18 { break }
 			if values[incy][incx] == 0 {
 				score = evaluateBoard(values, incx, incy, player, &copy, capture)

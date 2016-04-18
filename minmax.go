@@ -66,7 +66,7 @@ func checkAlign(values *[19][19]int, x, y, player int) int {
 		cnt := 0
 		x, y = x + incx, y + incy
 		for i := 0; i < 4; i++ {
-			if !checkBounds(x, y) {
+			if !checkBounds(x, y) || values[y][x] == -p{
 				return cnt
 			}
 			if values[y][x] == p {

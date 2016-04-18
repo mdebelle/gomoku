@@ -30,30 +30,106 @@ func search(values *[19][19]int, player, x, y, depth int, capture *[3]int) (int,
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}}
 
-	for incy := y - 5; incy < y + 6; incy++ {
-//	for incy := 0; incy < 19; incy++ {
-		if incy < 0 { incy = 0 } else if incy > 18 { break }
-		for incx := x - 4; incx < x + 5; incx++ {
-//		for incx := 0; incx < 19; incx++ {
-			if incx < 0 { incx = 0 } else if incx > 18 { break }
-			if values[incy][incx] == 0 {
-				score = evaluateBoard(values, incx, incy, player, &copy, capture)
-				fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
-				if score >= 10 {
-					return incx, incy, copy
-				}
-				if score > score_a {
-					score_a = score
-					ax = incx
-					ay = incy
-				} else if score < score_b {
-					score_b = score
-					bx = incx
-					by = incy
+	for circle := 1; circle < 6; circle++ {
+
+		incy := y - circle
+		if incy > 0 { 
+			for incx := x - circle; incx < x + circle; incx++ {
+				if incx < 0 { incx = 0 } else if incx > 18 { break }
+				if values[incy][incx] == 0 {
+					score = evaluateBoard(values, incx, incy, player, &copy, capture)
+					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
+					if score >= 10 {
+						return incx, incy, copy
+					}
+					if score > score_a {
+						score_a = score
+						ax = incx
+						ay = incy
+					} else if score < score_b {
+						score_b = score
+						bx = incx
+						by = incy
+					}
 				}
 			}
 		}
+
+		incy = y + circle
+		if incy < 18 { 
+			for incx := x - circle; incx < x + circle; incx++ {
+				if incx < 0 { incx = 0 } else if incx > 18 { break }
+				if values[incy][incx] == 0 {
+					score = evaluateBoard(values, incx, incy, player, &copy, capture)
+					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
+					if score >= 10 {
+						return incx, incy, copy
+					}
+					if score > score_a {
+						score_a = score
+						ax = incx
+						ay = incy
+					} else if score < score_b {
+						score_b = score
+						bx = incx
+						by = incy
+					}
+				}
+			}
+		}
+
+
+		incx := x - (circle - 1)
+		if incx > 0 { 
+			for incy := y - circle; incy < y + circle; incy++ {
+				if incy < 0 { incy = 0 } else if incy > 18 { break }
+				if values[incy][incx] == 0 {
+					score = evaluateBoard(values, incx, incy, player, &copy, capture)
+					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
+					if score >= 10 {
+						return incx, incy, copy
+					}
+					if score > score_a {
+						score_a = score
+						ax = incx
+						ay = incy
+					} else if score < score_b {
+						score_b = score
+						bx = incx
+						by = incy
+					}
+				}
+			}
+		}
+
+		incx = x + (circle - 1)
+		if incx < 18 {
+			for incy := y - circle; incy < y + circle; incy++ {
+				if incy < 0 { incy = 0 } else if incy > 18 { break }
+				if values[incy][incx] == 0 {
+					score = evaluateBoard(values, incx, incy, player, &copy, capture)
+					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
+					if score >= 10 {
+						return incx, incy, copy
+					}
+					if score > score_a {
+						score_a = score
+						ax = incx
+						ay = incy
+					} else if score < score_b {
+						score_b = score
+						bx = incx
+						by = incy
+					}
+				}
+			}
+		}
+
+
+
 	}
+
+
 
 	if score_a > -score_b {
 		return ax, ay, copy
@@ -132,7 +208,7 @@ func evaluateBoard(values *[19][19]int, x, y, player int, copy *[19][19][3]int, 
 	copy[y][x][2] = v3
 	fmt.Printf("val3 -> %d\n", v3)
 	if v3 > 0 {
-		return capture[player + 1] + v3
+		return capture[player + 1] + v3 + 3
 	}
 	if (-v2 * 2) > v1 {
 		return v2

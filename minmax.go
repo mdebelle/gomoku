@@ -1,14 +1,18 @@
 package main
 
 import "fmt"
+//import "math"
+
+type Position struct {
+	x, y int
+}
 
 func search(values *[19][19]int, player, x, y, depth int, capture *[3]int) (int, int, [19][19][3]int) {
 
-	var	score int
 	var	score_a, ax, ay int
-	var score_b, bx, by int
-
-	score_a, score_b = 0, 0
+	var	score_b, bx, by int
+	var pos *Position
+	lst := []*Position{}
 
 	copy := [19][19][3]int {{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
@@ -30,107 +34,51 @@ func search(values *[19][19]int, player, x, y, depth int, capture *[3]int) (int,
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}},
 							{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}}
 
-	for circle := 1; circle < 6; circle++ {
+	score_a, score_b = 0, 0
 
-		incy := y - circle
-		if incy > 0 { 
-			for incx := x - circle; incx < x + circle; incx++ {
-				if incx < 0 { incx = 0 } else if incx > 18 { break }
-				if values[incy][incx] == 0 {
-					score = evaluateBoard(values, incx, incy, player, &copy, capture)
-					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
-					if score >= 10 {
-						return incx, incy, copy
-					}
-					if score > score_a {
-						score_a = score
-						ax = incx
-						ay = incy
-					} else if score < score_b {
-						score_b = score
-						bx = incx
-						by = incy
-					}
-				}
+	for circle := 1; circle < 7; circle++ {
+		a, b := y - circle, y + circle
+		for incx := x - (circle - 1); incx < x + circle; incx++ {
+			if incx < 0 { incx = 0 } else if incx > 18 { break }
+			if a >= 0 && values[a][incx] == 0 {
+				pos = new(Position)
+				pos.x, pos.y = incx, a
+				lst = append(lst, pos)
+			}
+			if b < 19 && values[b][incx] == 0 {
+				pos = new(Position)
+				pos.x, pos.y = incx, b
+				lst = append(lst, pos)
 			}
 		}
-
-		incy = y + circle
-		if incy < 18 { 
-			for incx := x - circle; incx < x + circle; incx++ {
-				if incx < 0 { incx = 0 } else if incx > 18 { break }
-				if values[incy][incx] == 0 {
-					score = evaluateBoard(values, incx, incy, player, &copy, capture)
-					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
-					if score >= 10 {
-						return incx, incy, copy
-					}
-					if score > score_a {
-						score_a = score
-						ax = incx
-						ay = incy
-					} else if score < score_b {
-						score_b = score
-						bx = incx
-						by = incy
-					}
-				}
+		a, b = x - circle, x + circle
+		for incy := y - circle; incy <= y + circle; incy++ {
+			if incy < 0 { incy = 0 } else if incy > 18 { break }
+			if a >= 0 && values[incy][a] == 0 {
+				pos = new(Position)
+				pos.x, pos.y = a, incy
+				lst = append(lst, pos)
+			}
+			if b < 19 && values[incy][b] == 0 {
+				pos = new(Position)
+				pos.x, pos.y = b, incy
+				lst = append(lst, pos)
 			}
 		}
-
-
-		incx := x - (circle - 1)
-		if incx > 0 { 
-			for incy := y - circle; incy < y + circle; incy++ {
-				if incy < 0 { incy = 0 } else if incy > 18 { break }
-				if values[incy][incx] == 0 {
-					score = evaluateBoard(values, incx, incy, player, &copy, capture)
-					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
-					if score >= 10 {
-						return incx, incy, copy
-					}
-					if score > score_a {
-						score_a = score
-						ax = incx
-						ay = incy
-					} else if score < score_b {
-						score_b = score
-						bx = incx
-						by = incy
-					}
-				}
-			}
-		}
-
-		incx = x + (circle - 1)
-		if incx < 18 {
-			for incy := y - circle; incy < y + circle; incy++ {
-				if incy < 0 { incy = 0 } else if incy > 18 { break }
-				if values[incy][incx] == 0 {
-					score = evaluateBoard(values, incx, incy, player, &copy, capture)
-					fmt.Printf("score [%d][%d] -> %d\n", incx, incy, score)
-					if score >= 10 {
-						return incx, incy, copy
-					}
-					if score > score_a {
-						score_a = score
-						ax = incx
-						ay = incy
-					} else if score < score_b {
-						score_b = score
-						bx = incx
-						by = incy
-					}
-				}
-			}
-		}
-
-
-
 	}
-
-
-
+	
+	for i := range(lst) {
+		fmt.Printf("x[%d] y[%d]\n", lst[i].x, lst[i].y)
+		score := evaluateBoard(values, lst[i].x, lst[i].y, player, &copy, capture)
+		if score >= 10 {
+			return lst[i].x, lst[i].y, copy
+		}
+		if score > score_a {
+			score_a, ax, ay = score, lst[i].x, lst[i].y
+		} else if score < score_b {
+			score_b, bx, by = score, lst[i].x, lst[i].y
+		}
+	}
 	if score_a > -score_b {
 		return ax, ay, copy
 	}
@@ -194,116 +142,21 @@ func evaluateBoard(values *[19][19]int, x, y, player int, copy *[19][19][3]int, 
 
 	v1 = checkAlign(values, x, y, player)
 	copy[y][x][0] = v1
-	fmt.Printf("val1 -> %d\n", v1)
 	if v1 >= 4 {
-		return 10
+		return 20
 	}
 	v2 = -checkAlign(values, x, y, -player )
 	copy[y][x][1] = -v2
-	fmt.Printf("val2 -> %d\n", v2)
-	if v2 <= -5 {
-		return -10
+	if v2 <= -4 {
+		return -20
 	}
 	v3 = checkCapt(values, x, y, player)
 	copy[y][x][2] = v3
-	fmt.Printf("val3 -> %d\n", v3)
 	if v3 > 0 {
-		return capture[player + 1] + v3 + 3
+		return capture[player + 1] + v3 + 2
 	}
 	if (-v2 * 2) > v1 {
 		return v2
 	}
 	return v1
 }
-
-	// max := 0
-	// copy := *values
-	// var x, y int
-
-	// for i := 0; i < 19; i++ {
-	// 	for j := 0; j < 19; j++ {
-	// 		if copy[i][j] == 0 {
-	// 			copy[i][j] = player
-	// 			pts := 0
-	// 			if checkVictory(&copy, player, i, j) {
-	// 				return j, i
-	// 			} else if doCaptures(&copy, player, i, j) > 0 {
-	// 				pts = capturedByIA
-	// 			}
-	// 			p := minimise(&copy, -player)
-	// 			if (pts < p) {
-	// 				pts = p
-	// 			}
-	// 			if max < pts {
-	// 				fmt.Printf("coordonees [%d][%d] = %d \n", j, i, pts)
-	// 				max = pts
-	// 				x = j
-	// 				y = i
-	// 			}
-	// 			copy = *values
-	// 		}
-	// 	}
-	// }
-	// return x, y
-
-// func minimise(values *[19][19]int, player int) int {
-// 	min := 20
-// 	copy := *values
-
-// 	for i := 0; i < 19; i++ {
-// 		for j := 0; j < 19; j++ {
-// 			if copy[i][j] == 0 {
-// 				copy[i][j] = player
-// 				pts := 20
-// 				if checkVictory(&copy, player, i, j) {
-// 					return winPlayer
-// 				} else if doCaptures(&copy, player, i, j) > 0 {
-// 					pts = capturedByPlayer
-// 				}
-// 				p := maximise(&copy, -player)
-// 				if (pts > p) {
-// 					pts = p
-// 				}
-// 				if min > pts {
-// 					min = pts
-// 				}
-// 				copy = *values
-// 			}
-// 		}
-// 	}
-// 	if min == 20 {
-// 		return nothing
-// 	}
-// 	return min
-// }
-
-// func maximise(values *[19][19]int, player int) int {
-// 	max := 0
-// 	copy := *values
-
-// 	for i := 0; i < 19; i++ {
-// 		for j := 0; j < 19; j++ {
-// 			if copy[i][j] == 0 {
-// 				copy[i][j] = player
-// 				pts := 0
-// 				if checkVictory(&copy, player, i, j) {
-// 					fmt.Printf("%v\n%d %d //%d\n", copy, j, i, player)
-// 					return winIA
-// 				} else if doCaptures(&copy, player, i, j) > 0{
-// 					pts = capturedByIA 
-// 				} else {
-// 					pts = nothing
-// 				}
-// 				if max < pts {
-// 					max = pts
-// 				}
-// 				copy = *values
-// 			}
-// 		}
-// 	}
-// 	if max == 0 {
-// 		return nothing
-// 	}
-// 	return max
-// }
-

@@ -68,9 +68,8 @@ func search(values *[19][19]int, player, x, y, depth int, capture *[3]int) (int,
 	}
 	
 	for i := range(lst) {
-		fmt.Printf("x[%d] y[%d]\n", lst[i].x, lst[i].y)
 		score := evaluateBoard(values, lst[i].x, lst[i].y, player, &copy, capture)
-		if score >= 10 {
+		if score >= 20 {
 			return lst[i].x, lst[i].y, copy
 		}
 		if score > score_a {

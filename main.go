@@ -131,9 +131,7 @@ func checkRules(values *[19][19]int, capture *[3]int, x, y, player int) int {
 		fmt.Printf("Victoir\\o/\n")
 		return 0
 	}
-	fmt.Printf("Captured by(%d)-> %d\n",player, capture[player+1])
 	capture[player + 1] += doCaptures(values, player, y, x)
-	fmt.Printf("Captured by(%d)-> %d\n",player, capture[player+1])
 	if capture[player + 1] >= 10 {
 		fmt.Printf("capture de ouf \\o/\n")
 		return 0

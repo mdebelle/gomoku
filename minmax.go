@@ -165,7 +165,7 @@ func searchdeeper(values *[19][19]int, player, x, y, depth int, capture *[3]int)
 func do_move(x, y, capt int, values *[19][19]int, copy_capt *[19][19]int, player int) {
 
 	if (capt > 1) {
-		copy_capt = values
+		*copy_capt = *values
 		doCaptures(values, player, y, x)
 	} else {
 		values[y][x] = player
@@ -175,7 +175,7 @@ func do_move(x, y, capt int, values *[19][19]int, copy_capt *[19][19]int, player
 func undo_move(x, y, capt int, values *[19][19]int, copy_capt *[19][19]int) {
 
 	if (capt > 1) {
-		values = copy_capt
+		*values = *copy_capt
 	} else {
 		values[y][x] = 0
 	}

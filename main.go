@@ -14,27 +14,29 @@ const (
 	empty = 0
 	player_one = 1
 	player_two = -1
-	searchMaxTime = 0.5 
+	searchMaxTime = 500000000 * time.Nanosecond
 	searchMaxDepth = 20 
-	
-	winPlayer = 1
-	capturedByPlayer = 2
-	nothing = 3
-	capturedByIA = 4
-	winIA = 5
-
 )
 
-type searchParam struct {
-	board 		*[19][19]int
-	stoped		bool
-	stopTime	time.Time
-}
+const (
+	VerticalAxis = 1
+	HorizontalAxis = 2
+	LeftDiagAxis =	4 // haut droite
+	RightDiagAxis =	8 // bas droite
+)
+
+// type searchParam struct {
+// 	board 		*[19][19]int
+// 	stoped		bool
+// 	stopTime	time.Time
+// }
 
 type mustdo struct {
 	Todo	bool
 	X, Y    int
 }
+
+type Board [19][19]int
 
 var winTitle string = "Go-Gomoku"
 var winWidth, winHeight int = 800, 880
@@ -45,7 +47,7 @@ func checkBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
 
-func checkVictory(values *[19][19]int, nb int, y int, x int) bool {
+func checkVictory(values *Board, nb int, y int, x int) bool {
 	f := func (incx, incy int) int {
 		x, y := x + incx, y + incy
 		for i := 0; i < 4; i++ {
@@ -66,7 +68,7 @@ func checkVictory(values *[19][19]int, nb int, y int, x int) bool {
 	return false
 }
 
-func checkCaptures(values *[19][19]int, nb, x, y, incx, incy int) bool {
+func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 	checkAxis := func (x, y, incx, incy int) bool {
 		if !checkBounds(x - incx, y - incy) || !checkBounds(x + 2 * incx, y + 2 * incy) {
 			return false
@@ -105,7 +107,58 @@ func checkCaptures(values *[19][19]int, nb, x, y, incx, incy int) bool {
 	return f(incx, incy) || f(-incx, -incy)
 }
 
-func doCaptures(values *[19][19]int, nb int, y int, x int) int {
+func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
+
+	checkAxis := func(x, y, incx, incy, axis int) {
+		checkDirection := func(incx, incy int) (int, int) {
+			i, spaces, mine := 1, 0, 0
+			for ; i < 5; i++ {
+				x, y := x + incx * i, y + incy * i
+				if !checkBounds(x, y) || values[y][x] == -color{
+					return mine, spaces
+				} else if values[y][x] == 0 {
+					break
+				}
+				mine++
+			}
+			for ; i < 5; i++ {
+				x, y := x + incx * i, y + incy * i
+				if !checkBounds(x, y) || values[y][x] != 0 {
+					break
+				}
+				spaces++
+			}
+			return mine, spaces
+		}
+
+		if values[y][x] != 0 {
+			return
+		}
+		leftMine, leftSpaces := checkDirection(incx, incy)
+		rightMine, rightSpaces := checkDirection(-incx, -incy)
+		if leftSpaces == 0 || rightSpaces == 0 {
+			return
+		} else if leftMine + rightMine == 2  && leftSpaces + rightSpaces > 3 {
+			freeThrees[y][x] |= axis
+		} else {
+			freeThrees[y][x] &= ^axis
+		}
+	}
+
+	for i := 0; i < 4; i++ {
+		checkAxis(x + i, y, 1, 0, HorizontalAxis)
+		checkAxis(x - i, y, 1, 0, HorizontalAxis)
+		checkAxis(x, y + i, 0, 1, VerticalAxis)
+		checkAxis(x, y - i, 0, 1, VerticalAxis)
+		checkAxis(x + i, y - i, 1, -1, LeftDiagAxis)
+		checkAxis(x - i, y + i, 1, -1, LeftDiagAxis)
+		checkAxis(x + i, y + i, 1, 1, RightDiagAxis)
+		checkAxis(x - i, y - i, 1, 1, RightDiagAxis)
+	}
+	return
+}
+
+func doCaptures(values *Board, nb int, y int, x int) int {
 	forcapture := func (incx, incy int) int {
 		if !checkBounds(x + 3 * incx, y + 3 * incy) {
 			return 0
@@ -125,16 +178,17 @@ func doCaptures(values *[19][19]int, nb int, y int, x int) int {
 			forcapture(-1, 0) + forcapture(1, 0)
 }
 
-func checkRules(values *[19][19]int, capture *[3]int, x, y, player int) int {
+func checkRules(values, freeThrees *Board, capture *[3]int, x, y, player int) int {
+	checkDoubleThree(values, freeThrees, x, y, player)
 	values[y][x] = player
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
-		fmt.Printf("Victoir\\o/\n")
+		fmt.Printf("Victoire \\o/ %d\n", player)
 		return 0
 	}
 	capture[player + 1] += doCaptures(values, player, y, x)
 	if capture[player + 1] >= 10 {
-		fmt.Printf("capture de ouf \\o/\n")
+		fmt.Printf("capture de ouf \\o/ %d\n", player)
 		return 0
 	}
 	return -player
@@ -150,7 +204,7 @@ func mousePositionToGrid(val float64) int {
 	return t
 }
 
-func gridAnalyse(values *[19][19]int, nb int) (int, int) {
+func gridAnalyse(values *Board, nb int) (int, int) {
 	f := func (incx, incy , x, y, nb int) int {
 		x, y = x + incx, y + incy
 		for i := 0; i < 4; i++ {
@@ -223,8 +277,9 @@ func run() int {
 	var player int
 	victoir.Todo = false
 	var capture [3]int
-	var values [19][19]int
-	var better [19][19][3]int
+	var values Board
+	var freeThrees Board
+	var better [19][19][5]int
 
 	sdl.Init(sdl.INIT_EVERYTHING)
 
@@ -272,13 +327,13 @@ func run() int {
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
 					if victoir.Todo == true {
 						if px == victoir.X && py == victoir.Y {
-							player = checkRules(&values, &capture, px, py, player)
+							player = checkRules(&values, &freeThrees, &capture, px, py, player)
 							victoir.Todo = false
 						} else {
 							fmt.Printf("you must play in [%d][%d]\n", victoir.X, victoir.Y)
 						}
 					} else if values[py][px] == 0 {
-						player = checkRules(&values, &capture, px, py, player)
+						player = checkRules(&values, &freeThrees, &capture, px, py, player)
 					}
 				}
 			case *sdl.KeyUpEvent:
@@ -288,14 +343,14 @@ func run() int {
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
-				player = checkRules(&values, &capture, victoir.X, victoir.Y, player)
+				player = checkRules(&values, &freeThrees, &capture, victoir.X, victoir.Y, player)
 				victoir.Todo = false	
 			} else {
 				var x, y int
 				x, y, better = search(&values, player, px, py, 4, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				if values[y][x] == 0 {
-					player = checkRules(&values, &capture, x, y, player)
+					player = checkRules(&values, &freeThrees, &capture, x, y, player)
 				}
 			}
 
@@ -309,33 +364,13 @@ func run() int {
 		_ = rendererb.SetDrawColor(236, 240, 241, 0)
 		rendererb.Clear()
 		drawGrid(rendererb)
-		draweval(rendererb, &better)
+		draweval(rendererb, &better, &freeThrees)
 		rendererb.Present()
 	}
 	return 0
 }
 
-// type posxyz struct {
-// 	x,y,z	int
-// }
-
 func main() {
-
-	// hits := make(map[posxyz]map[string]int)
-	// mm, ok := hits[posxyz{0,1,2}]
-	// if !ok {
- //        mm = make(map[string]int)
- //        hits[posxyz{0,1,2}] = mm
- //    }
- //    mm["au"]++
-
-	// n := hits[posxyz{0,1,2}]["au"]
-
-	// fmt.Printf("%v\n", n)
-	// n++
-	// fmt.Printf("%v\n", n)
-
-
 
 	os.Exit(run())
 }

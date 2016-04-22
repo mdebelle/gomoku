@@ -12,7 +12,7 @@ func drawGrid(renderer *sdl.Renderer) {
 	}	
 }
 
-func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
+func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int) {
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
 			if values[j][i] == player_one {
@@ -42,7 +42,7 @@ func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
 	}
 }
 
-func draweval(renderer *sdl.Renderer, values *[19][19][3]int) {
+func draweval(renderer *sdl.Renderer, values *[19][19][5]int, freeThrees *Board) {
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
 			if values[j][i][0] != 0 {
@@ -86,6 +86,12 @@ func draweval(renderer *sdl.Renderer, values *[19][19][3]int) {
 					_ = renderer.DrawLine(((i+1)*40)-5, ((j+1)*40)+(k-5), ((i+1)*40)+5, ((j+1)*40)+(k-5))
 				}
 			}
+
+			if freeThrees[j][i] != 0 {
+				_ = renderer.SetDrawColor(0, 0, 0, 0)
+				_ = renderer.DrawLine(((i+1)*40), ((j+1)*40), ((i+1)*40), ((j+1)*40))
+			}
+
 		}
 	}
 }

@@ -12,7 +12,7 @@ func drawGrid(renderer *sdl.Renderer) {
 	}	
 }
 
-func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
+func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int) {
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
 			if values[j][i] == player_one {
@@ -42,7 +42,35 @@ func drawClic(renderer *sdl.Renderer, values *[19][19]int, capture *[3]int) {
 	}
 }
 
-func draweval(renderer *sdl.Renderer, values *[19][19][3]int) {
+func draweval(renderer *sdl.Renderer, values *[19][19][5]int, freeThrees *Board) {
+
+	dr := func (x, y, lenx, leny int, vertical bool) {
+		_ = renderer.SetDrawColor(0, 0, 0, 0)
+		if (!vertical) {
+			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny - 2)
+			_ = renderer.DrawLine(x, y - 1, x + lenx, y + leny - 1)
+			_ = renderer.DrawLine(x, y, x + lenx, y)
+			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny + 1)
+			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny + 2)
+		} else {
+			_ = renderer.DrawLine(x, y - 2, x - 2, y + leny)
+			_ = renderer.DrawLine(x, y - 1, x - 1, y + leny)
+			_ = renderer.DrawLine(x, y, x, y + leny)
+			_ = renderer.DrawLine(x, y - 2, x + 1, y + leny)
+			_ = renderer.DrawLine(x, y - 2, x + 2, y + leny)
+		}
+		return
+	}
+
+	bitValueAtPosition := func (number, pos int) bool {
+		number = number << uint(8 - pos)
+		number = number >> uint(7)
+		if number == 1 {
+			return true
+		}
+		return false
+	}
+
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
 			if values[j][i][0] != 0 {
@@ -86,6 +114,22 @@ func draweval(renderer *sdl.Renderer, values *[19][19][3]int) {
 					_ = renderer.DrawLine(((i+1)*40)-5, ((j+1)*40)+(k-5), ((i+1)*40)+5, ((j+1)*40)+(k-5))
 				}
 			}
+
+			if freeThrees[j][i] != 0 {
+				if bitValueAtPosition(freeThrees[j][i], 1) == true {
+						dr((i+1)*40, ((j+1)*40)-20, 0, 40, true)
+				}
+				if bitValueAtPosition(freeThrees[j][i], 2) == true {
+						dr((i+1)*40-20, ((j+1)*40), 40, 0, false)
+				}
+				if bitValueAtPosition(freeThrees[j][i], 4) == true {
+						dr((i+1)*40-10, ((j+1)*40)-10, 20, 20, false)
+				}
+				if bitValueAtPosition(freeThrees[j][i], 8) == true {
+						dr((i+1)*40-10, ((j+1)*40)+10, 20, 20, false)
+				}
+			}
+
 		}
 	}
 }

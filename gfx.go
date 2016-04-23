@@ -49,15 +49,15 @@ func draweval(renderer *sdl.Renderer, values *[19][19][5]int, freeThrees *Board)
 		if (!vertical) {
 			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny - 2)
 			_ = renderer.DrawLine(x, y - 1, x + lenx, y + leny - 1)
-			_ = renderer.DrawLine(x, y, x + lenx, y)
-			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny + 1)
-			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny + 2)
+			_ = renderer.DrawLine(x, y, x + lenx, y + leny)
+			_ = renderer.DrawLine(x, y + 1, x + lenx, y + leny + 1)
+			_ = renderer.DrawLine(x, y + 2, x + lenx, y + leny + 2)
 		} else {
-			_ = renderer.DrawLine(x, y - 2, x - 2, y + leny)
-			_ = renderer.DrawLine(x, y - 1, x - 1, y + leny)
+			_ = renderer.DrawLine(x - 2, y, x - 2, y + leny)
+			_ = renderer.DrawLine(x - 1, y, x - 1, y + leny)
 			_ = renderer.DrawLine(x, y, x, y + leny)
-			_ = renderer.DrawLine(x, y - 2, x + 1, y + leny)
-			_ = renderer.DrawLine(x, y - 2, x + 2, y + leny)
+			_ = renderer.DrawLine(x + 1, y, x + 1, y + leny)
+			_ = renderer.DrawLine(x + 2, y, x + 2, y + leny)
 		}
 		return
 	}
@@ -117,16 +117,16 @@ func draweval(renderer *sdl.Renderer, values *[19][19][5]int, freeThrees *Board)
 
 			if freeThrees[j][i] != 0 {
 				if bitValueAtPosition(freeThrees[j][i], 1) == true {
-						dr((i+1)*40, ((j+1)*40)-20, 0, 40, true)
+						dr((i+1)*40, ((j+1)*40)-15, 0, 30, true)
 				}
 				if bitValueAtPosition(freeThrees[j][i], 2) == true {
-						dr((i+1)*40-20, ((j+1)*40), 40, 0, false)
+						dr((i+1)*40-15, ((j+1)*40), 30, 0, false)
+				}
+				if bitValueAtPosition(freeThrees[j][i], 3) == true {
+						dr((i+1)*40-15, ((j+1)*40)+15, 30, -30, false)
 				}
 				if bitValueAtPosition(freeThrees[j][i], 4) == true {
-						dr((i+1)*40-10, ((j+1)*40)-10, 20, 20, false)
-				}
-				if bitValueAtPosition(freeThrees[j][i], 8) == true {
-						dr((i+1)*40-10, ((j+1)*40)+10, 20, 20, false)
+						dr((i+1)*40-15, ((j+1)*40)-15, 30, 30, false)
 				}
 			}
 

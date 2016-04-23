@@ -131,7 +131,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 			return mine, spaces
 		}
 
-		if values[y][x] != 0 {
+		if !checkBounds(x, y) || values[y][x] != 0 {
 			return
 		}
 		leftMine, leftSpaces := checkDirection(incx, incy)
@@ -347,7 +347,7 @@ func run() int {
 				victoir.Todo = false	
 			} else {
 				var x, y int
-				x, y, better = search(&values, player, px, py, 4, &capture)
+				x, y, better = search(&values, player, px, py, 5, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				if values[y][x] == 0 {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)

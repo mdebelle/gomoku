@@ -19,10 +19,10 @@ const (
 )
 
 const (
-	VerticalAxis = 1
-	HorizontalAxis = 2
-	LeftDiagAxis =	4 // haut droite
-	RightDiagAxis =	8 // bas droite
+	VerticalAxis = 1 << iota
+	HorizontalAxis
+	LeftDiagAxis	// haut droite
+	RightDiagAxis	// bas droite
 )
 
 // type searchParam struct {
@@ -38,8 +38,10 @@ type mustdo struct {
 
 type Board [19][19]int
 
-var winTitle string = "Go-Gomoku"
-var winWidth, winHeight int = 800, 880
+var (
+	winTitle string = "Go-Gomoku"
+	winWidth, winHeight int = 800, 880
+)
 
 var victoir mustdo
 
@@ -347,7 +349,7 @@ func run() int {
 				victoir.Todo = false	
 			} else {
 				var x, y int
-				x, y, better = search(&values, player, px, py, 5, &capture)
+				x, y, better = search(&values, player, px, py, 4, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				if values[y][x] == 0 {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)

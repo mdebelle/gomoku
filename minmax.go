@@ -1,8 +1,9 @@
 package main
 
-//import "fmt"
 //import "math"
 //import "time"
+
+import "fmt"
 
 type Position struct {
 	x, y int
@@ -57,9 +58,11 @@ func search(values *Board, player, x, y, depth int, capture *[3]int) (int, int, 
 		}
 	}
 
-	bestscore := -4000
-	alpha := -4000
-	beta := 4000
+	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatifs
+
+	alpha := -int(^uint32(0)>>1)
+	beta := int(^uint32(0)>>1)
+	fmt.Printf("-> %d | %d\n", alpha, beta)
 
 	// startTime := time.Now()
 	// stopTime := startTime.Add(searchMaxTime)
@@ -135,7 +138,7 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 		}
 	}
 
-	bestscore := -4000
+	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatif
 	// node++
 
 	// if node % 4095 == 0 {

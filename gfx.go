@@ -63,8 +63,8 @@ func draweval(renderer *sdl.Renderer, values *[19][19][5]int, freeThrees *Board)
 	}
 
 	bitValueAtPosition := func (number, pos int) bool {
-		number = number << uint(8 - pos)
-		number = number >> uint(7)
+		number >>= uint(pos - 1)
+		number &= 1
 		if number == 1 {
 			return true
 		}

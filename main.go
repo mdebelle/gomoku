@@ -25,12 +25,6 @@ const (
 	RightDiagAxis	// bas droite
 )
 
-// type searchParam struct {
-// 	board 		*[19][19]int
-// 	stoped		bool
-// 	stopTime	time.Time
-// }
-
 type mustdo struct {
 	Todo	bool
 	X, Y    int
@@ -133,7 +127,10 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 			return mine, spaces
 		}
 
-		if !checkBounds(x, y) || values[y][x] != 0 {
+		if !checkBounds(x, y) {
+			return
+		} else if values[y][x] != 0 {
+			freeThrees[y][x] &= ^axis
 			return
 		}
 		leftMine, leftSpaces := checkDirection(incx, incy)
@@ -148,10 +145,10 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	}
 
 	for i := 0; i < 4; i++ {
-		checkAxis(x + i, y, 1, 0, HorizontalAxis)
-		checkAxis(x - i, y, 1, 0, HorizontalAxis)
 		checkAxis(x, y + i, 0, 1, VerticalAxis)
 		checkAxis(x, y - i, 0, 1, VerticalAxis)
+		checkAxis(x + i, y, 1, 0, HorizontalAxis)
+		checkAxis(x - i, y, 1, 0, HorizontalAxis)
 		checkAxis(x + i, y - i, 1, -1, LeftDiagAxis)
 		checkAxis(x - i, y + i, 1, -1, LeftDiagAxis)
 		checkAxis(x + i, y + i, 1, 1, RightDiagAxis)

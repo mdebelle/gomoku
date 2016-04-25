@@ -13,7 +13,7 @@ import (
 const (
 	empty = 0
 	player_one = 1
-	player_two = -1
+	player_two = -player_one
 	searchMaxTime = 500000000 * time.Nanosecond
 	searchMaxDepth = 20 
 )
@@ -31,6 +31,7 @@ type mustdo struct {
 }
 
 type Board [19][19]int
+type FreeThreesAxis [2][19][19]int
 
 var (
 	winTitle string = "Go-Gomoku"
@@ -105,19 +106,36 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 
 func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 
+	/*
 	checkAxis := func(x, y, incx, incy, axis int) {
+		hole := false
 		checkDirection := func(incx, incy int) (int, int) {
+			lastHole := false
 			i, spaces, mine := 1, 0, 0
 			for ; i < 5; i++ {
 				x, y := x + incx * i, y + incy * i
-				if !checkBounds(x, y) || values[y][x] == -color{
-					return mine, spaces
+				if !checkBounds(x, y) || values[y][x] == -color {
+					if (!hole) {
+						return 0, 0
+					} else {
+						hole = false
+						return 1, 1
+					}
 				} else if values[y][x] == 0 {
+					if hole == false {
+						hole, lastHole = true, true
+						spaces++
+						continue
+					} else if lastHole {
+						hole = false
+						spaces++
+					}
 					break
 				}
+				if lastHole == true {lastHole, spaces = false, 0}
 				mine++
 			}
-			for ; i < 5; i++ {
+			for ; i <= 5; i++ {
 				x, y := x + incx * i, y + incy * i
 				if !checkBounds(x, y) || values[y][x] != 0 {
 					break
@@ -135,16 +153,34 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		}
 		leftMine, leftSpaces := checkDirection(incx, incy)
 		rightMine, rightSpaces := checkDirection(-incx, -incy)
+		fmt.Printf("[%d][%d] -> (%d %d) (%d %d) %v\n", x, y, leftMine, leftSpaces, rightMine, rightSpaces, hole)
 		if leftSpaces == 0 || rightSpaces == 0 {
 			return
-		} else if leftMine + rightMine == 2  && leftSpaces + rightSpaces > 3 {
+		} else if (leftMine + rightMine == 2 || (hole && leftMine + rightMine == 3) ) && leftSpaces + rightSpaces >= 3 {
 			freeThrees[y][x] |= axis
 		} else {
 			freeThrees[y][x] &= ^axis
 		}
 	}
+*/
 
+	checkAxis := f(x, y, incx, incy, axis int) {
+
+		if !checkBounds(x, y) { return}
+		if values(x, y) != 0 { freeThree[y][x] &= ^axis; return }
+	
+		if !checkbound(x - incxx, y - incy) && values[y - incx][x - incy] == 0 {
+			if ()
+		} else if  !checkbound(x - 2 * incx, y - 2 * incy) && values[y][x] == c {
+
+		}
+		
+	}
+
+
+	
 	for i := 0; i < 4; i++ {
+
 		checkAxis(x, y + i, 0, 1, VerticalAxis)
 		checkAxis(x, y - i, 0, 1, VerticalAxis)
 		checkAxis(x + i, y, 1, 0, HorizontalAxis)
@@ -154,6 +190,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		checkAxis(x + i, y + i, 1, 1, RightDiagAxis)
 		checkAxis(x - i, y - i, 1, 1, RightDiagAxis)
 	}
+		
 	return
 }
 
@@ -177,9 +214,11 @@ func doCaptures(values *Board, nb int, y int, x int) int {
 			forcapture(-1, 0) + forcapture(1, 0)
 }
 
-func checkRules(values, freeThrees *Board, capture *[3]int, x, y, player int) int {
-	checkDoubleThree(values, freeThrees, x, y, player)
+func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, player int) int {
 	values[y][x] = player
+	freeThrees[0][y][x] = 0
+	freeThrees[1][y][x] = 0
+	checkDoubleThree(values, &freeThrees[(player + 1) / 2], x, y, player)
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
 		fmt.Printf("Victoire \\o/ %d\n", player)
@@ -269,6 +308,14 @@ func init() {
     runtime.LockOSThread()
 }
 
+func evaluateAllBoard(player int, value *Board, better *[19][19][5]int, capture *[3]int) {
+	for y := 0; y < 19; y++ {
+		for x := 0; x < 19; x++ {
+			evaluateBoard(value, x, y, player, better, capture)
+		}
+	}
+}
+
 func run() int {
 	var event sdl.Event
 	var running bool
@@ -277,7 +324,7 @@ func run() int {
 	victoir.Todo = false
 	var capture [3]int
 	var values Board
-	var freeThrees Board
+	var freeThrees [2]Board
 	var better [19][19][5]int
 
 	sdl.Init(sdl.INIT_EVERYTHING)
@@ -320,7 +367,7 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if player == player_one && t.Type == 1025 {
+				if /* player == player_one && */ t.Type == 1025 {
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
@@ -334,11 +381,13 @@ func run() int {
 					} else if values[py][px] == 0 {
 						player = checkRules(&values, &freeThrees, &capture, px, py, player)
 					}
+					evaluateAllBoard(player, &values, &better, &capture)
 				}
 			case *sdl.KeyUpEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
+		/*
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
@@ -352,8 +401,8 @@ func run() int {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)
 				}
 			}
-
 		}
+*/
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()
 		drawGrid(renderer)
@@ -363,13 +412,13 @@ func run() int {
 		_ = rendererb.SetDrawColor(236, 240, 241, 0)
 		rendererb.Clear()
 		drawGrid(rendererb)
-		draweval(rendererb, &better, &freeThrees)
+		draweval(rendererb, &better, &freeThrees[(-player + 1) / 2])
 		rendererb.Present()
 	}
 	return 0
 }
 
 func main() {
-
+	fmt.Printf("%d %d", HorizontalAxis, LeftDiagAxis)
 	os.Exit(run())
 }

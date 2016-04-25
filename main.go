@@ -164,19 +164,135 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	}
 */
 
-	checkAxis := f(x, y, incx, incy, axis int) {
 
-		if !checkBounds(x, y) { return}
-		if values(x, y) != 0 { freeThree[y][x] &= ^axis; return }
-	
-		if !checkbound(x - incxx, y - incy) && values[y - incx][x - incy] == 0 {
-			if ()
-		} else if  !checkbound(x - 2 * incx, y - 2 * incy) && values[y][x] == c {
 
+	checkAxis := func(x, y, incx, incy, axis int) {
+
+		if !checkBounds(x, y) { return }
+		
+		if values[y][x] != 0 { 
+			freeThrees[y][x] = 0
+			return
 		}
+
+		if !checkBounds(x - incx, y - incy) || !checkBounds(x + incx, y + incy) { return }
+		if values[y - incy][x - incx] == -color || values[y + incy][x + incx] == -color { 
+			freeThrees[y][x] &= ^axis
+			return
+		}
+
+		if checkBounds(x - (4 * incx), y - (4 * incy)) && 
+			values[y - (4 * incy)][x - (4 * incx)] == 0 && values[y + (1 * incy)][x + (1 * incx)] == 0 {
+			if values[y - (3 * incy)][x - (3 * incx)] == color {
+				if values[y - (2 * incy)][x - (2 * incx)] == color &&
+		   			values[y - (1 * incy)][x - (1 * incx)] == 0 {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+				if values[y - (2 * incy)][x - (2 * incx)] == 0 &&
+		   			values[y - (1 * incy)][x - (1 * incx)] == color {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+			}
+			if values[y - (3 * incy)][x - (3 * incx)] == 0 &&
+		   		values[y - (2 * incy)][x - (2 * incx)] == color &&
+		   		values[y - (1 * incy)][x - (1 * incx)] == color {
+		   			freeThrees[y][x] |= axis
+		   			return
+			}
+		}
+		
+		if checkBounds(x - (3 * incx), y - (3 * incy)) && checkBounds(x + (2 * incx), y + (2 * incy)) &&
+			values[y - (3 * incy)][x - (3 * incx)] == 0 && values[y + (2 * incy)][x + (2 * incx)] == 0 {
+			if values[y - (2 * incy)][x - (2 * incx)] == color {
+				if values[y - (1 * incy)][x - (1 * incx)] == color &&
+		   			values[y + (1 * incy)][x + (1 * incx)] == 0 {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+				if values[y - (1 * incy)][x - (1 * incx)] == 0 &&
+		   			values[y + (1 * incy)][x + (1 * incx)] == color {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+			}
+			if values[y - (2 * incy)][x - (2 * incx)] == 0 &&
+		   		values[y - (1 * incy)][x - (1 * incx)] == color &&
+		   		values[y + (1 * incy)][x + (1 * incx)] == color {
+		   			freeThrees[y][x] |= axis
+		   			return
+			}
+		}
+		
+		if checkBounds(x - (2 * incx), y - (2 * incy)) && checkBounds(x + (3 * incx), y + (3 * incy)) &&
+			values[y - (2 * incy)][x - (2 * incx)] == 0 && values[y + (3 * incy)][x + (3 * incx)] == 0 {
+			if values[y - (1 * incy)][x - (1 * incx)] == color {
+				if values[y + (1 * incy)][x + (1 * incx)] == color &&
+		   			values[y + (2 * incy)][x + (2 * incx)] == 0 {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+				if values[y + (1 * incy)][x + (1 * incx)] == 0 &&
+		   			values[y + (2 * incy)][x + (2 * incx)] == color {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+			}
+			if values[y - (1 * incy)][x - (1 * incx)] == 0 &&
+		   		values[y + (1 * incy)][x + (1 * incx)] == color &&
+		   		values[y + (2 * incy)][x + (2 * incx)] == color {
+		   			freeThrees[y][x] |= axis
+		   			return
+			}
+		}
+		
+		if checkBounds(x + (4 * incx), y + (4 * incy)) &&
+			values[y - (1 * incy)][x - (1 * incx)] == 0 && values[y + (4 * incy)][x + (4 * incx)] == 0 {
+			if values[y + (1 * incy)][x + (1 * incx)] == color {
+				if values[y + (2 * incy)][x + (2 * incx)] == color &&
+		   			values[y + (3 * incy)][x + (3 * incx)] == 0 {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+				if values[y + (2 * incy)][x + (2 * incx)] == 0 &&
+		   			values[y + (3 * incy)][x + (3 * incx)] == color {
+		   				freeThrees[y][x] |= axis
+		   				return
+				}
+			}
+			if values[y + (1 * incy)][x + (1 * incx)] == 0 &&
+		   		values[y + (2 * incy)][x + (2 * incx)] == color &&
+		   		values[y + (3 * incy)][x + (3 * incx)] == color {
+		   			freeThrees[y][x] |= axis
+		   			return
+			}
+		}
+		freeThrees[y][x] &= ^axis
+		return
 		
 	}
 
+
+	//i ->  4 3 2 1   0   1 2 3 4
+	//     | | | | | x,y | | | | |
+
+	//     { |o|o| |  -  | } | | |
+	//     { |o| |o|  -  | } | | |
+	//     { | |o|o|  -  | } | | |
+
+	//     | { |o|o|  -  | | } | |	
+	//     | { |o| |  -  |o| } | |
+	//     | { | |o|  -  |o| } | |
+
+	
+	//     | | { |o|  -  |o| | } |
+	//     | | { |o|  -  | |o| } |
+	//     | | { | |  -  |o|o| } |
+	
+	//     | | | { |  -  |o|o| | }
+	//     | | | { |  -  |o| |o| }
+	//     | | | { |  -  | |o|o| }
 
 	
 	for i := 0; i < 4; i++ {
@@ -406,13 +522,13 @@ func run() int {
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()
 		drawGrid(renderer)
-		drawClic(renderer, &values, &capture)
+		drawClic(renderer, &values, &capture, &freeThrees[(-player + 1) / 2])
 		renderer.Present()
 
 		_ = rendererb.SetDrawColor(236, 240, 241, 0)
 		rendererb.Clear()
 		drawGrid(rendererb)
-		draweval(rendererb, &better, &freeThrees[(-player + 1) / 2])
+		draweval(rendererb, &better)
 		rendererb.Present()
 	}
 	return 0

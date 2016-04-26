@@ -164,9 +164,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	}
 */
 
-
-
-	checkAxis := func(x, y, incx, incy, axis int) {
+	checkAxis2 := func(x, y, incx, incy, axis int) {
 
 		if !checkBounds(x, y) { return }
 		
@@ -270,9 +268,93 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		}
 		freeThrees[y][x] &= ^axis
 		return
-		
 	}
 
+	if false {checkAxis2(0, 0, 0, 0, 0)}
+
+	const (
+		p_theirs = iota
+		p_empty
+		p_mine
+		p_checked
+	)
+
+	const (
+		s_start = iota
+		s_1
+		s_2
+		s_3
+		s_4
+		s_5
+		s_6
+		s_7
+		s_8
+		s_9
+		s_10
+		s_11
+		s_12
+		s_13
+		s_14
+		s_15
+		s_16
+		s_end
+		s_error
+	)
+
+	stateTable := [...][4]int {
+//		    •    |   O    |	  Ø    |    @
+		{ s_start, s_start, s_3,     s_error }, // start
+		{ s_error, s_error, s_error, s_8     }, // 1
+		{ s_error, s_error, s_1,     s_16    }, // 2
+		{ s_11,    s_start, s_4,     s_14    }, // 3
+		{ s_9,     s_start, s_4,     s_5     }, // 4
+		{ s_10,    s_error, s_6,     s_error }, // 5
+		{ s_7,     s_error, s_error, s_error }, // 6
+		{ s_8,     s_error, s_error, s_error }, // 7
+		{ s_error, s_error, s_end,   s_error }, // 8
+		{ s_13,    s_error, s_12,    s_10    }, // 9
+		{ s_8,     s_error, s_7,     s_error }, // 10
+		{ s_2,     s_start, s_12,    s_15    }, // 11
+		{ s_1,     s_start, s_error, s_7     }, // 12
+		{ s_error, s_start, s_1,     s_8     }, // 13
+		{ s_15,    s_error, s_6,     s_error }, // 14
+		{ s_16,    s_error, s_7,     s_error }, // 15
+		{ s_error, s_error, s_8,     s_error }, // 16
+		{ s_end,   s_end,   s_end,   s_end   }, // end
+		{ s_error, s_error, s_error, s_error },
+	}
+
+	formatCheckedZone := func(board *Board, x, y, incx, incy, mine int, format *[9]int) {
+		tmp_x, tmp_y := 0, 0
+		for i := 0; i < 9; i++ {
+			if !checkBounds(x, y) {
+				format[i] = p_theirs
+			} else if tmp_y == y && tmp_x == x {
+				format[i] = p_checked
+			} else {
+				format[i] = board[y][x] + 1
+			}
+			tmp_x += incx
+			tmp_y += incy
+		}
+	}
+
+	checkAxis := func(x, y, incx, incy int, axis int) {
+		format := [9]int {}
+		formatCheckedZone(values, x, y, incx, incy, color, &format)
+		state := s_start
+		for i := 0; i < 9; i++ {
+			input := format[i]
+			state = stateTable[state][input]
+			fmt.Printf("%d\n", state);
+		}
+		fmt.Printf("---------------\n");
+		if state == s_end {
+			freeThrees[y][x] |= axis
+		} else {
+			freeThrees[y][x] &= ^axis
+		}
+	}
 
 	//i ->  4 3 2 1   0   1 2 3 4
 	//     | | | | | x,y | | | | |
@@ -285,16 +367,15 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	//     | { |o| |  -  |o| } | |
 	//     | { | |o|  -  |o| } | |
 
-	
 	//     | | { |o|  -  |o| | } |
 	//     | | { |o|  -  | |o| } |
 	//     | | { | |  -  |o|o| } |
-	
+
 	//     | | | { |  -  |o|o| | }
 	//     | | | { |  -  |o| |o| }
 	//     | | | { |  -  | |o|o| }
 
-	
+
 	for i := 0; i < 4; i++ {
 
 		checkAxis(x, y + i, 0, 1, VerticalAxis)

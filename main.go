@@ -106,65 +106,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 
 func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 
-	/*
 	checkAxis := func(x, y, incx, incy, axis int) {
-		hole := false
-		checkDirection := func(incx, incy int) (int, int) {
-			lastHole := false
-			i, spaces, mine := 1, 0, 0
-			for ; i < 5; i++ {
-				x, y := x + incx * i, y + incy * i
-				if !checkBounds(x, y) || values[y][x] == -color {
-					if (!hole) {
-						return 0, 0
-					} else {
-						hole = false
-						return 1, 1
-					}
-				} else if values[y][x] == 0 {
-					if hole == false {
-						hole, lastHole = true, true
-						spaces++
-						continue
-					} else if lastHole {
-						hole = false
-						spaces++
-					}
-					break
-				}
-				if lastHole == true {lastHole, spaces = false, 0}
-				mine++
-			}
-			for ; i <= 5; i++ {
-				x, y := x + incx * i, y + incy * i
-				if !checkBounds(x, y) || values[y][x] != 0 {
-					break
-				}
-				spaces++
-			}
-			return mine, spaces
-		}
-
-		if !checkBounds(x, y) {
-			return
-		} else if values[y][x] != 0 {
-			freeThrees[y][x] &= ^axis
-			return
-		}
-		leftMine, leftSpaces := checkDirection(incx, incy)
-		rightMine, rightSpaces := checkDirection(-incx, -incy)
-		fmt.Printf("[%d][%d] -> (%d %d) (%d %d) %v\n", x, y, leftMine, leftSpaces, rightMine, rightSpaces, hole)
-		if leftSpaces == 0 || rightSpaces == 0 {
-			return
-		} else if (leftMine + rightMine == 2 || (hole && leftMine + rightMine == 3) ) && leftSpaces + rightSpaces >= 3 {
-			freeThrees[y][x] |= axis
-		} else {
-			freeThrees[y][x] &= ^axis
-		}
-	}
-*/
-
-	checkAxis2 := func(x, y, incx, incy, axis int) {
 
 		if !checkBounds(x, y) { return }
 		
@@ -270,12 +212,10 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		return
 	}
 
-	if false {checkAxis2(0, 0, 0, 0, 0)}
-
 	const (
-		p_theirs = iota
+		p_mine = iota
+		p_theirs
 		p_empty
-		p_mine
 		p_checked
 	)
 
@@ -325,30 +265,38 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	}
 
 	formatCheckedZone := func(board *Board, x, y, incx, incy, mine int, format *[9]int) {
-		tmp_x, tmp_y := 0, 0
+		tmp_x, tmp_y := x - incx*4, y - incy*4
 		for i := 0; i < 9; i++ {
-			if !checkBounds(x, y) {
+			if !checkBounds(tmp_x, tmp_y) {
 				format[i] = p_theirs
 			} else if tmp_y == y && tmp_x == x {
 				format[i] = p_checked
 			} else {
-				format[i] = board[y][x] + 1
+				pos := board[tmp_y][tmp_x]
+				if pos == color {
+					format[i] = p_mine
+				} else if pos == -color {
+					format[i] = p_theirs
+				} else {
+					format[i] = p_empty
+				}
 			}
 			tmp_x += incx
 			tmp_y += incy
 		}
 	}
 
-	checkAxis := func(x, y, incx, incy int, axis int) {
+	checkAxis2 := func(x, y, incx, incy int, axis int) {
+		if !checkBounds(x, y) || values[y][x] != empty {
+			return
+		}
 		format := [9]int {}
 		formatCheckedZone(values, x, y, incx, incy, color, &format)
 		state := s_start
 		for i := 0; i < 9; i++ {
 			input := format[i]
 			state = stateTable[state][input]
-			fmt.Printf("%d\n", state);
 		}
-		fmt.Printf("---------------\n");
 		if state == s_end {
 			freeThrees[y][x] |= axis
 		} else {
@@ -375,9 +323,10 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	//     | | | { |  -  |o| |o| }
 	//     | | | { |  -  | |o|o| }
 
+	if false {checkAxis2(0, 0, 0, 0, 0)}
+	if false {checkAxis(0, 0, 0, 0, 0)}
 
 	for i := 0; i < 4; i++ {
-
 		checkAxis(x, y + i, 0, 1, VerticalAxis)
 		checkAxis(x, y - i, 0, 1, VerticalAxis)
 		checkAxis(x + i, y, 1, 0, HorizontalAxis)
@@ -412,10 +361,22 @@ func doCaptures(values *Board, nb int, y int, x int) int {
 }
 
 func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, player int) int {
+	freeThreesCount := 0
+	playerId := (player + 1) / 2
+	for i := uint(0); i < 4; i++ {
+		if (freeThrees[playerId][y][x] & (1 << i)) != 0 {
+			freeThreesCount++
+		}
+	}
+	if freeThreesCount == 2 {
+		fmt.Printf("Nope\n")
+		return player
+	}
 	values[y][x] = player
 	freeThrees[0][y][x] = 0
 	freeThrees[1][y][x] = 0
-	checkDoubleThree(values, &freeThrees[(player + 1) / 2], x, y, player)
+	checkDoubleThree(values, &freeThrees[playerId], x, y, player)
+	checkDoubleThree(values, &freeThrees[(-player + 1) / 2], x, y, -player)
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
 		fmt.Printf("Victoire \\o/ %d\n", player)

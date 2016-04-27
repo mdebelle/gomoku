@@ -4,50 +4,48 @@ import (
 	"testing"
 )
 
-func test(board, sample *Board, x, y, color int, t *testing.T) {
-	freeThrees := [2]Board {}
-	checkDoubleThree(board, &freeThrees[(color + 1) / 2], x, y, color)
-	if (freeThrees[(color + 1) / 2] != *sample) {
-		t.Error("Expected ", sample, ", got ", freeThrees[1])
+func test(free *[2]Board, sample *Board, color int, t *testing.T) {
+	if (free[(color + 1) / 2] != *sample) {
+		t.Error("Expected :\n", sample[0], "\n, got :\n", free[1][0])
 	}
 }
 
+// [..O.O.]
 func TestFreeThrees0(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
+	board, free, capture := Board{}, [2]Board{}, [3]int{}
+	checkRules(&board, &free, &capture, 1, 0, player_one)
+	checkRules(&board, &free, &capture, 3, 0, player_one)
+	test(&free, &Board{{0, 0, 2, 0, 2}}, player_one, t)
 }
 
 func TestFreeThrees1(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 3, 0, 1, t)
+	board, free, capture := Board{}, [2]Board{}, [3]int{}
+	checkRules(&board, &free, &capture, 3, 0, player_one)
+	checkRules(&board, &free, &capture, 1, 0, player_one)
+	checkRules(&board, &free, &capture, 5, 0, player_two)
+	test(&free, &Board{}, player_one, t)
 }
 
 func TestFreeThrees2(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
+	board, free, capture := Board{}, [2]Board{}, [3]int{}
+	checkRules(&board, &free, &capture, 3, 0, player_one)
+	checkRules(&board, &free, &capture, 5, 0, player_two)
+	checkRules(&board, &free, &capture, 1, 0, player_one)
+	test(&free, &Board{}, player_one, t)
 }
 
 func TestFreeThrees3(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
+	board, free, capture := Board{}, [2]Board{}, [3]int{}
+	checkRules(&board, &free, &capture, 3, 0, player_one)
+	checkRules(&board, &free, &capture, 5, 0, player_one)
+	checkRules(&board, &free, &capture, 1, 0, player_one)
+	test(&free, &Board{{0, 0, 0, 2, 0, 2}}, player_one, t)
 }
 
 func TestFreeThrees4(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
-}
-
-func TestFreeThrees5(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
-}
-
-func TestFreeThrees6(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<2}}, 1, 0, 1, t)
-}
-
-func TestFreeThrees7(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<3}}, 1, 0, 1, t)
-}
-
-func TestFreeThrees8(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
-}
-
-func TestFreeThrees9(t *testing.T) {
-	test(&Board{{0, 1, 0, 1}}, &Board{{0, 0, 1<<1, 0, 1<<1}}, 1, 0, 1, t)
+	board, free, capture := Board{}, [2]Board{}, [3]int{}
+	checkRules(&board, &free, &capture, 3, 0, player_one)
+	checkRules(&board, &free, &capture, 4, 0, player_one)
+	checkRules(&board, &free, &capture, 5, 0, player_two)
+	test(&free, &Board{}, player_one, t)
 }

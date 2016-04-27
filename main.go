@@ -8,6 +8,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
 	"time"
+
+	"strconv"
 )
 
 const (
@@ -106,7 +108,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 
 func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 
-	checkAxis := func(x, y, incx, incy, axis int) {
+	checkAxis2 := func(x, y, incx, incy, axis int) {
 
 		if !checkBounds(x, y) { return }
 		
@@ -244,7 +246,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	stateTable := [...][4]int {
 //		    •    |   O    |	  Ø    |    @
 		{ s_start, s_start, s_3,     s_error }, // start
-		{ s_error, s_error, s_error, s_8     }, // 1
+		{ s_16   , s_error, s_error, s_8     }, // 1
 		{ s_error, s_error, s_1,     s_16    }, // 2
 		{ s_11,    s_start, s_4,     s_14    }, // 3
 		{ s_9,     s_start, s_4,     s_5     }, // 4
@@ -264,40 +266,91 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		{ s_error, s_error, s_error, s_error },
 	}
 
-	formatCheckedZone := func(board *Board, x, y, incx, incy, mine int, format *[9]int) {
+	checkAxis3 := func(x, y, incx, incy int, axis int) {
+
+		if !checkBounds(x, y) || values[y][x] != empty {
+			return
+		}
+	
+		state := s_start
 		tmp_x, tmp_y := x - incx*4, y - incy*4
 		for i := 0; i < 9; i++ {
+			input := 0
 			if !checkBounds(tmp_x, tmp_y) {
-				format[i] = p_theirs
+				input = p_theirs
 			} else if tmp_y == y && tmp_x == x {
-				format[i] = p_checked
+				input = p_checked
 			} else {
-				pos := board[tmp_y][tmp_x]
+				pos := values[tmp_y][tmp_x]
 				if pos == color {
-					format[i] = p_mine
+					input = p_mine
 				} else if pos == -color {
-					format[i] = p_theirs
+					input = p_theirs
 				} else {
-					format[i] = p_empty
+					input = p_empty
 				}
+			}
+			/*
+			if state == s_error {
+				freeThrees[y][x] &= ^axis
+				return
+			}
+			*/
+			state = stateTable[state][input]
+			tmp_x += incx
+			tmp_y += incy
+		}
+		if state == s_end {
+			freeThrees[y][x] |= axis
+		} else {
+			freeThrees[y][x] &= ^axis
+		}
+
+	}
+
+	const (
+		pat1 = (1 << 2 * 2) | (1 << 3 * 2) // -00--
+		pat2 = (1 << 1 * 2) | (1 << 3 * 2) // -0-0-
+		pat3 = (1 << 1 * 2) | (1 << 2 * 2) // --00-
+		mask = 0x3FF
+	)
+
+	checkAxis := func(x, y, incx, incy, axis int) {
+		if !checkBounds(x, y) || values[y][x] != empty {
+			return
+		}
+		flags := uint32(0)
+		tmp_x, tmp_y := x - incx*4, y - incy*4
+		for i := uint(0); i < 8; i++ {
+			if !checkBounds(tmp_x, tmp_y) {
+				fmt.Printf("%d ", 2)
+				flags |= 2 << ((7 - i)*2)
+			} else if tmp_x == x && tmp_y == y {
+				tmp_x += incx
+				tmp_y += incy
+				i--
+				continue
+			} else {
+				fmt.Printf("%d ", values[tmp_y][tmp_x] * color + 1)
+				flags |= uint32(values[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
 			}
 			tmp_x += incx
 			tmp_y += incy
 		}
-	}
-
-	checkAxis2 := func(x, y, incx, incy int, axis int) {
-		if !checkBounds(x, y) || values[y][x] != empty {
-			return
-		}
-		format := [9]int {}
-		formatCheckedZone(values, x, y, incx, incy, color, &format)
-		state := s_start
-		for i := 0; i < 9; i++ {
-			input := format[i]
-			state = stateTable[state][input]
-		}
-		if state == s_end {
+		fmt.Println("")
+		fmt.Println(strconv.FormatUint(uint64(flags), 2))
+		if  ((flags >> 3*3) & mask) == pat1 ||
+			((flags >> 3*3) & mask) == pat2 ||
+			((flags >> 3*3) & mask) == pat3 ||
+			((flags >> 3*2) & mask) == pat1 ||
+			((flags >> 3*2) & mask) == pat2 ||
+			((flags >> 3*2) & mask) == pat3 ||
+			((flags >> 3*1) & mask) == pat1 ||
+			((flags >> 3*1) & mask) == pat2 ||
+			((flags >> 3*1) & mask) == pat3 ||
+			((flags >> 3*0) & mask) == pat1 ||
+			((flags >> 3*0) & mask) == pat2 ||
+			((flags >> 3*0) & mask) == pat3 {
 			freeThrees[y][x] |= axis
 		} else {
 			freeThrees[y][x] &= ^axis
@@ -324,6 +377,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	//     | | | { |  -  | |o|o| }
 
 	if false {checkAxis2(0, 0, 0, 0, 0)}
+	if false {checkAxis3(0, 0, 0, 0, 0)}
 	if false {checkAxis(0, 0, 0, 0, 0)}
 
 	for i := 0; i < 4; i++ {
@@ -545,7 +599,7 @@ func run() int {
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-		/*
+/*
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
@@ -560,7 +614,7 @@ func run() int {
 				}
 			}
 		}
-*/
+//*/
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()
 		drawGrid(renderer)

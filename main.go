@@ -8,8 +8,6 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
 	"time"
-
-	"strconv"
 )
 
 const (
@@ -309,9 +307,9 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	}
 
 	const (
-		pat1 = (1 << 2 * 2) | (1 << 3 * 2) // -00--
-		pat2 = (1 << 1 * 2) | (1 << 3 * 2) // -0-0-
-		pat3 = (1 << 1 * 2) | (1 << 2 * 2) // --00-
+		pat1 = 0x1A5 // -00--
+		pat2 = 0x199 // -0-0-
+		pat3 = 0x169 // --00-
 		mask = 0x3FF
 	)
 
@@ -323,34 +321,29 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		tmp_x, tmp_y := x - incx*4, y - incy*4
 		for i := uint(0); i < 8; i++ {
 			if !checkBounds(tmp_x, tmp_y) {
-				fmt.Printf("%d ", 2)
-				flags |= 2 << ((7 - i)*2)
 			} else if tmp_x == x && tmp_y == y {
 				tmp_x += incx
 				tmp_y += incy
 				i--
 				continue
 			} else {
-				fmt.Printf("%d ", values[tmp_y][tmp_x] * color + 1)
 				flags |= uint32(values[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
 			}
 			tmp_x += incx
 			tmp_y += incy
 		}
-		fmt.Println("")
-		fmt.Println(strconv.FormatUint(uint64(flags), 2))
-		if  ((flags >> 3*3) & mask) == pat1 ||
-			((flags >> 3*3) & mask) == pat2 ||
-			((flags >> 3*3) & mask) == pat3 ||
-			((flags >> 3*2) & mask) == pat1 ||
-			((flags >> 3*2) & mask) == pat2 ||
-			((flags >> 3*2) & mask) == pat3 ||
-			((flags >> 3*1) & mask) == pat1 ||
-			((flags >> 3*1) & mask) == pat2 ||
-			((flags >> 3*1) & mask) == pat3 ||
-			((flags >> 3*0) & mask) == pat1 ||
-			((flags >> 3*0) & mask) == pat2 ||
-			((flags >> 3*0) & mask) == pat3 {
+		if  ((flags >> (2*3)) & mask) == pat1 ||
+			((flags >> (2*3)) & mask) == pat2 ||
+			((flags >> (2*3)) & mask) == pat3 ||
+			((flags >> (2*2)) & mask) == pat1 ||
+			((flags >> (2*2)) & mask) == pat2 ||
+			((flags >> (2*2)) & mask) == pat3 ||
+			((flags >> (2*1)) & mask) == pat1 ||
+			((flags >> (2*1)) & mask) == pat2 ||
+			((flags >> (2*1)) & mask) == pat3 ||
+			((flags >> (2*0)) & mask) == pat1 ||
+			((flags >> (2*0)) & mask) == pat2 ||
+			((flags >> (2*0)) & mask) == pat3 {
 			freeThrees[y][x] |= axis
 		} else {
 			freeThrees[y][x] &= ^axis
@@ -380,7 +373,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	if false {checkAxis3(0, 0, 0, 0, 0)}
 	if false {checkAxis(0, 0, 0, 0, 0)}
 
-	for i := 0; i < 4; i++ {
+	for i := 1; i <= 4; i++ {
 		checkAxis(x, y + i, 0, 1, VerticalAxis)
 		checkAxis(x, y - i, 0, 1, VerticalAxis)
 		checkAxis(x + i, y, 1, 0, HorizontalAxis)
@@ -579,7 +572,7 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if /* player == player_one && */ t.Type == 1025 {
+				if  player == player_one &&  t.Type == 1025 {
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
@@ -599,7 +592,7 @@ func run() int {
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-/*
+//*
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
@@ -607,7 +600,7 @@ func run() int {
 				victoir.Todo = false	
 			} else {
 				var x, y int
-				x, y, better = search(&values, player, px, py, 4, &capture)
+				x, y, better = search(&values, &freeThrees[0], player, px, py, 4, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				if values[y][x] == 0 {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)

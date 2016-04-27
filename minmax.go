@@ -18,7 +18,7 @@ type Position struct {
 // var stopByTime = false
 // var node = 0
 
-func search(values *Board, player, x, y, depth int, capture *[3]int) (int, int, [19][19][5]int) {
+func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) (int, int, [19][19][5]int) {
 
 	var	ax, ay int
 //	var pos *Position
@@ -26,6 +26,15 @@ func search(values *Board, player, x, y, depth int, capture *[3]int) (int, int, 
 	var copy [19][19][5]int
 	var copy_capt Board
 
+	checkfree := func (b int) bool {
+		var j int
+		for i := uint(0); i < 4; i++ {
+			if b & (1 << i) != 0 { j++}
+		}
+		if j == 2 {return true}
+		return false
+	}
+	
 	m := make(map[Position]bool)
 
 	for i:= 0;i < 19; i++ {
@@ -36,20 +45,20 @@ func search(values *Board, player, x, y, depth int, capture *[3]int) (int, int, 
 					a, b := i - circle, i + circle
 					for incx := j - (circle - 1); incx < j + circle; incx++ {
 						if incx < 0 { incx = 0 } else if incx > 18 { break }
-						if a >= 0 && values[a][incx] == 0 {
+						if a >= 0 && values[a][incx] == 0 && !checkfree(freeThree[a][incx]) {
 							m[Position{incx, a}] = true
 						}
-						if b < 19 && values[b][incx] == 0 {
+						if b < 19 && values[b][incx] == 0 && !checkfree(freeThree[b][incx]) {
 							m[Position{incx, b}] = true
 						}
 					}
 					a, b = j - circle, j + circle
 					for incy := i - circle; incy <= i + circle; incy++ {
 						if incy < 0 { incy = 0 } else if incy > 18 { break }
-						if a >= 0 && values[incy][a] == 0 {
+						if a >= 0 && values[incy][a] == 0 && !checkfree(freeThree[incy][a]) {
 							m[Position{a, incy}] = true
 						}
-						if b < 19 && values[incy][b] == 0 {
+						if b < 19 && values[incy][b] == 0 && !checkfree(freeThree[incy][b]) {
 							m[Position{b, incy}] = true
 						}
 					}
@@ -60,37 +69,6 @@ func search(values *Board, player, x, y, depth int, capture *[3]int) (int, int, 
 	}
 
 	fmt.Printf("%v\n", m)
-
-	// for circle := 1; circle < 7; circle++ {
-	// 	a, b := y - circle, y + circle
-	// 	for incx := x - (circle - 1); incx < x + circle; incx++ {
-	// 		if incx < 0 { incx = 0 } else if incx > 18 { break }
-	// 		if a >= 0 && values[a][incx] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = incx, a
-	// 			lst = append(lst, pos)
-	// 		}
-	// 		if b < 19 && values[b][incx] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = incx, b
-	// 			lst = append(lst, pos)
-	// 		}
-	// 	}
-	// 	a, b = x - circle, x + circle
-	// 	for incy := y - circle; incy <= y + circle; incy++ {
-	// 		if incy < 0 { incy = 0 } else if incy > 18 { break }
-	// 		if a >= 0 && values[incy][a] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = a, incy
-	// 			lst = append(lst, pos)
-	// 		}
-	// 		if b < 19 && values[incy][b] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = b, incy
-	// 			lst = append(lst, pos)
-	// 		}
-	// 	}
-	// }
 
 	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatifs
 
@@ -121,28 +99,6 @@ func search(values *Board, player, x, y, depth int, capture *[3]int) (int, int, 
 		}
 	}
 
-	// for i := range(lst) {
-	// 	score := evaluateBoard(values, lst[i].x, lst[i].y, player, &copy, capture)
-	// 	if score >= 20 {
-	// 		return lst[i].x, lst[i].y, copy
-	// 	}
-	// 	a := do_move(lst[i].x, lst[i].y, copy[lst[i].y][lst[i].x], values, &copy_capt, player)
-	// 	capture[player+1] += a
-	// 	s := -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
-	// 	undo_move(lst[i].x, lst[i].y, copy[lst[i].y][lst[i].x], values, &copy_capt)
-	// 	capture[player+1] -= a
-		
-	// 	if s >= beta {
-	// 		return lst[i].x, lst[i].y, copy
-	// 	}
-	// 	if s > bestscore {
-	// 		bestscore = s
-	// 		ax, ay = lst[i].x, lst[i].y
-	// 		if s > alpha {
-	// 			alpha = s
-	// 		}
-	// 	}
-	// }
 	return ax, ay, copy
 
 }
@@ -192,37 +148,6 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 		}
 	}
 
-	// for circle := 1; circle < 7; circle++ {
-	// 	a, b := y - circle, y + circle
-	// 	for incx := x - (circle - 1); incx < x + circle; incx++ {
-	// 		if incx < 0 { incx = 0 } else if incx > 18 { break }
-	// 		if a >= 0 && values[a][incx] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = incx, a
-	// 			lst = append(lst, pos)
-	// 		}
-	// 		if b < 19 && values[b][incx] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = incx, b
-	// 			lst = append(lst, pos)
-	// 		}
-	// 	}
-	// 	a, b = x - circle, x + circle
-	// 	for incy := y - circle; incy <= y + circle; incy++ {
-	// 		if incy < 0 { incy = 0 } else if incy > 18 { break }
-	// 		if a >= 0 && values[incy][a] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = a, incy
-	// 			lst = append(lst, pos)
-	// 		}
-	// 		if b < 19 && values[incy][b] == 0 {
-	// 			pos = new(Position)
-	// 			pos.x, pos.y = b, incy
-	// 			lst = append(lst, pos)
-	// 		}
-	// 	}
-	// }
-
 	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatif
 	// node++
 
@@ -256,29 +181,6 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 			}
 		}
 	}
-
-	// for i := range(lst) {
-	// 	score := evaluateBoard(values, lst[i].x, lst[i].y, player, &copy, capture)
-	// 	if score >= 20 {
-	// 		return score
-	// 	}
-	// //	if stopByTime { break }
-	// 	a := do_move(lst[i].x, lst[i].y, copy[lst[i].y][lst[i].x], values, &copy_capt, player)
-	// 	capture[player+1] += a
-	// 	s := -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
-	// 	undo_move(lst[i].x, lst[i].y, copy[lst[i].y][lst[i].x], values, &copy_capt)
-	// 	capture[player+1] -= a
-		
-	// 	if s >= beta {
-	// 		return s
-	// 	}
-	// 	if s > bestscore {
-	// 		bestscore = s
-	// 		if s > alpha {
-	// 			alpha = s
-	// 		}
-	// 	}
-	// }
 	return bestscore
 }
 

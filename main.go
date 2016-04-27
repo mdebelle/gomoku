@@ -562,6 +562,7 @@ func run() int {
 	}
 	defer rendererb.Destroy()
 
+	_= rendererb.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
 	running = true
 	player = 1
 	var px, py int
@@ -600,7 +601,7 @@ func run() int {
 				victoir.Todo = false	
 			} else {
 				var x, y int
-				x, y, better = search(&values, &freeThrees[0], player, px, py, 4, &capture)
+				x, y, better = search(&values, &freeThrees, player, px, py, 4, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				if values[y][x] == 0 {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)

@@ -1,8 +1,5 @@
 package main
 
-//import "math"
-//import "time"
-
 import "fmt"
 
 type Position struct {
@@ -18,22 +15,20 @@ type Position struct {
 // var stopByTime = false
 // var node = 0
 
-func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) (int, int, [19][19][5]int) {
-
-	var	ax, ay int
-//	var pos *Position
-//	lst := []*Position{}
-	var copy [19][19][5]int
-	var copy_capt Board
-
-	checkfree := func (b int) bool {
+func bitCount(b int) int {
 		var j int
 		for i := uint(0); i < 4; i++ {
 			if b & (1 << i) != 0 { j++}
 		}
-		if j == 2 {return true}
-		return false
-	}
+		return j
+}
+
+func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, [19][19][5]int) {
+
+	var	ax, ay int
+	var copy [19][19][5]int
+	var copy_capt Board
+
 	
 	m := make(map[Position]bool)
 
@@ -45,20 +40,20 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 					a, b := i - circle, i + circle
 					for incx := j - (circle - 1); incx < j + circle; incx++ {
 						if incx < 0 { incx = 0 } else if incx > 18 { break }
-						if a >= 0 && values[a][incx] == 0 && !checkfree(freeThree[a][incx]) {
+						if a >= 0 && values[a][incx] == 0 && bitCount(freeThree[0][a][incx]) != 2 {
 							m[Position{incx, a}] = true
 						}
-						if b < 19 && values[b][incx] == 0 && !checkfree(freeThree[b][incx]) {
+						if b < 19 && values[b][incx] == 0 && bitCount(freeThree[0][b][incx]) != 2 {
 							m[Position{incx, b}] = true
 						}
 					}
 					a, b = j - circle, j + circle
 					for incy := i - circle; incy <= i + circle; incy++ {
 						if incy < 0 { incy = 0 } else if incy > 18 { break }
-						if a >= 0 && values[incy][a] == 0 && !checkfree(freeThree[incy][a]) {
+						if a >= 0 && values[incy][a] == 0 && bitCount(freeThree[0][incy][a]) != 2 {
 							m[Position{a, incy}] = true
 						}
-						if b < 19 && values[incy][b] == 0 && !checkfree(freeThree[incy][b]) {
+						if b < 19 && values[incy][b] == 0 && bitCount(freeThree[0][incy][b]) != 2 {
 							m[Position{b, incy}] = true
 						}
 					}
@@ -67,8 +62,6 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 			}
 		}
 	}
-
-	fmt.Printf("%v\n", m)
 
 	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatifs
 
@@ -83,7 +76,7 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 		}
 		a := do_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt, player)
 		capture[player+1] += a
-		s := -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
+		s := -searchdeeper(values, freeThree, -player, x, y, depth - 1, capture, -beta, -alpha)
 		undo_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt)
 		capture[player+1] -= a
 		
@@ -103,10 +96,8 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 
 }
 
-func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha, beta int) int {
+func searchdeeper(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int, alpha, beta int) int {
 
-//	var pos *Position
-//	lst := []*Position{}
 	var copy_capt Board
 	var copy [19][19][5]int
 
@@ -125,20 +116,20 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 					a, b := i - circle, i + circle
 					for incx := j - (circle - 1); incx < j + circle; incx++ {
 						if incx < 0 { incx = 0 } else if incx > 18 { break }
-						if a >= 0 && values[a][incx] == 0 {
+						if a >= 0 && values[a][incx] == 0 && bitCount(freeThree[(player + 1)/2][a][incx]) != 2{
 							m[Position{incx, a}] = true
 						}
-						if b < 19 && values[b][incx] == 0 {
+						if b < 19 && values[b][incx] == 0 && bitCount(freeThree[(player + 1)/2][b][incx]) != 2{
 							m[Position{incx, b}] = true
 						}
 					}
 					a, b = j - circle, j + circle
 					for incy := i - circle; incy <= i + circle; incy++ {
 						if incy < 0 { incy = 0 } else if incy > 18 { break }
-						if a >= 0 && values[incy][a] == 0 {
+						if a >= 0 && values[incy][a] == 0 && bitCount(freeThree[(player + 1)/2][incy][a]) != 2{
 							m[Position{a, incy}] = true
 						}
-						if b < 19 && values[incy][b] == 0 {
+						if b < 19 && values[incy][b] == 0 && bitCount(freeThree[(player + 1)/2][incy][b]) != 2{
 							m[Position{b, incy}] = true
 						}
 					}
@@ -167,7 +158,7 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 	//	if stopByTime { break }
 		a := do_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt, player)
 		capture[player+1] += a
-		s := -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
+		s := -searchdeeper(values, freeThree, -player, x, y, depth - 1, capture, -beta, -alpha)
 		undo_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt)
 		capture[player+1] -= a
 		

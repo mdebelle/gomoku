@@ -8,6 +8,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
 	"time"
+
+	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
 const (
@@ -32,6 +34,14 @@ type mustdo struct {
 
 type Board [19][19]int
 type FreeThreesAxis [2][19][19]int
+
+// copy[0] "score" ia
+// copy[1] "score" player 
+// copy[2] "capturable"
+// copy[3] forbiden ia
+// copy[4] forbiden player
+// TODO: Make it an object
+type BoardData [19][19][5]int
 
 var (
 	winTitle string = "Go-Gomoku"
@@ -213,100 +223,6 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	}
 
 	const (
-		p_mine = iota
-		p_theirs
-		p_empty
-		p_checked
-	)
-
-	const (
-		s_start = iota
-		s_1
-		s_2
-		s_3
-		s_4
-		s_5
-		s_6
-		s_7
-		s_8
-		s_9
-		s_10
-		s_11
-		s_12
-		s_13
-		s_14
-		s_15
-		s_16
-		s_end
-		s_error
-	)
-
-	stateTable := [...][4]int {
-//		    •    |   O    |	  Ø    |    @
-		{ s_start, s_start, s_3,     s_error }, // start
-		{ s_16   , s_error, s_error, s_8     }, // 1
-		{ s_error, s_error, s_1,     s_16    }, // 2
-		{ s_11,    s_start, s_4,     s_14    }, // 3
-		{ s_9,     s_start, s_4,     s_5     }, // 4
-		{ s_10,    s_error, s_6,     s_error }, // 5
-		{ s_7,     s_error, s_error, s_error }, // 6
-		{ s_8,     s_error, s_error, s_error }, // 7
-		{ s_error, s_error, s_end,   s_error }, // 8
-		{ s_13,    s_error, s_12,    s_10    }, // 9
-		{ s_8,     s_error, s_7,     s_error }, // 10
-		{ s_2,     s_start, s_12,    s_15    }, // 11
-		{ s_1,     s_start, s_error, s_7     }, // 12
-		{ s_error, s_start, s_1,     s_8     }, // 13
-		{ s_15,    s_error, s_6,     s_error }, // 14
-		{ s_16,    s_error, s_7,     s_error }, // 15
-		{ s_error, s_error, s_8,     s_error }, // 16
-		{ s_end,   s_end,   s_end,   s_end   }, // end
-		{ s_error, s_error, s_error, s_error },
-	}
-
-	checkAxis3 := func(x, y, incx, incy int, axis int) {
-
-		if !checkBounds(x, y) || values[y][x] != empty {
-			return
-		}
-	
-		state := s_start
-		tmp_x, tmp_y := x - incx*4, y - incy*4
-		for i := 0; i < 9; i++ {
-			input := 0
-			if !checkBounds(tmp_x, tmp_y) {
-				input = p_theirs
-			} else if tmp_y == y && tmp_x == x {
-				input = p_checked
-			} else {
-				pos := values[tmp_y][tmp_x]
-				if pos == color {
-					input = p_mine
-				} else if pos == -color {
-					input = p_theirs
-				} else {
-					input = p_empty
-				}
-			}
-			/*
-			if state == s_error {
-				freeThrees[y][x] &= ^axis
-				return
-			}
-			*/
-			state = stateTable[state][input]
-			tmp_x += incx
-			tmp_y += incy
-		}
-		if state == s_end {
-			freeThrees[y][x] |= axis
-		} else {
-			freeThrees[y][x] &= ^axis
-		}
-
-	}
-
-	const (
 		pat1 = 0x1A5 // -00--
 		pat2 = 0x199 // -0-0-
 		pat3 = 0x169 // --00-
@@ -370,7 +286,6 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 	//     | | | { |  -  | |o|o| }
 
 	if false {checkAxis2(0, 0, 0, 0, 0)}
-	if false {checkAxis3(0, 0, 0, 0, 0)}
 	if false {checkAxis(0, 0, 0, 0, 0)}
 
 	for i := 1; i <= 4; i++ {
@@ -513,7 +428,7 @@ func init() {
     runtime.LockOSThread()
 }
 
-func evaluateAllBoard(player int, value *Board, better *[19][19][5]int, capture *[3]int) {
+func evaluateAllBoard(player int, value *Board, better *BoardData, capture *[3]int) {
 	for y := 0; y < 19; y++ {
 		for x := 0; x < 19; x++ {
 			evaluateBoard(value, x, y, player, better, capture)
@@ -530,9 +445,14 @@ func run() int {
 	var capture [3]int
 	var values Board
 	var freeThrees [2]Board
-	var better [19][19][5]int
+	var better BoardData
 
 	sdl.Init(sdl.INIT_EVERYTHING)
+	if err := ttf.Init(); err != nil {
+		fmt.Println(err)
+		return 3
+	}
+	defer ttf.Quit()
 
 	window, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)

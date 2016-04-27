@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/sdl_ttf"
+	"strconv"
 )
 
 func drawGrid(renderer *sdl.Renderer) {
@@ -86,7 +88,7 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 
 }
 
-func draweval(renderer *sdl.Renderer, values *[19][19][5]int) {
+func draweval(renderer *sdl.Renderer, values *BoardData) {
 
 	// dr := func (x, y, lenx, leny int, vertical bool) {
 	// 	_ = renderer.SetDrawColor(0, 0, 0, 0)
@@ -113,6 +115,12 @@ func draweval(renderer *sdl.Renderer, values *[19][19][5]int) {
 	// 	return false
 	// }
 
+	font, err := ttf.OpenFont("/Library/Fonts/Arial.ttf", 9)
+	if err != nil {
+		panic(err)
+	}
+	defer font.Close()
+
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
 			if values[j][i][0] != 0 {
@@ -131,6 +139,17 @@ func draweval(renderer *sdl.Renderer, values *[19][19][5]int) {
 				for k := 0; k < 20; k++ {
 					_ = renderer.DrawLine(((i+1)*40)-10, ((j+1)*40)+(k-10), ((i+1)*40), ((j+1)*40)+(k-10))
 				}
+
+				surface, err := font.RenderUTF8_Blended(strconv.Itoa(values[i][j][0]), sdl.Color {0, 0, 0, 1})
+				if err != nil { panic(err) }
+
+				tex, err := renderer.CreateTextureFromSurface(surface)
+				if err != nil { panic(err) }
+
+				surface.Free()
+				rect := sdl.Rect {int32(i) * 40 + 40 - surface.W / 2, int32(j) * 40 + 40 - surface.H / 2, surface.W, surface.H}
+				_, _, rect.W, rect.H, _ = tex.Query()
+				renderer.Copy(tex, nil, &rect)
 			}
 			if values[j][i][1] != 0 {
 				switch {

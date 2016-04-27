@@ -9,21 +9,15 @@ type Position struct {
 	x, y int
 }
 
-// copy[0] "score" ia
-// copy[1] "score" player 
-// copy[2] "capturable"
-// copy[3] forbiden ia
-// copy[4] forbiden player
-
 // var stopByTime = false
 // var node = 0
 
-func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) (int, int, [19][19][5]int) {
+func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
 
 	var	ax, ay int
 //	var pos *Position
 //	lst := []*Position{}
-	var copy [19][19][5]int
+	var copy BoardData
 	var copy_capt Board
 
 	checkfree := func (b int) bool {
@@ -77,13 +71,13 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 	fmt.Printf("-> %d | %d\n", alpha, beta)
 
 	for i, _ := range(m) {
-		score := evaluateBoard(values, i.x, i.y, player, &copy, capture)
-		if score >= 20 {
+		s := evaluateBoard(values, i.x, i.y, player, &copy, capture)
+		if s >= 20 {
 			return i.x, i.y, copy
 		}
 		a := do_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt, player)
 		capture[player+1] += a
-		s := -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
+		s = -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
 		undo_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt)
 		capture[player+1] -= a
 		
@@ -108,7 +102,7 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 //	var pos *Position
 //	lst := []*Position{}
 	var copy_capt Board
-	var copy [19][19][5]int
+	var copy BoardData
 
 	if depth == 0 {
 		return evaluateBoard(values, x, y, player, &copy, capture)
@@ -255,8 +249,8 @@ func checkCapt(values *Board, x, y, player int) int {
 			capt(0, -1) + capt(0, 1) + capt(-1, 0) + capt(1, 0)
 }
 
-func evaluateBoard(values *Board, x, y, player int, copy *[19][19][5]int, capture *[3]int) int {
-	
+func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
+
 	var v1, v2, v3 int
 
 	v1 = checkAlign(values, x, y, player)

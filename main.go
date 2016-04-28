@@ -8,6 +8,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
 	"time"
+	"log"
 )
 
 const (
@@ -532,6 +533,18 @@ func run() int {
 	var freeThrees [2]Board
 	var better [19][19][5]int
 
+	f, err := os.OpenFile("testlogfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create file: %s\n", err)
+		return 1
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+	log.Printf("---NEW GAME---\n")
+
+
+
 	sdl.Init(sdl.INIT_EVERYTHING)
 
 	window, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
@@ -577,6 +590,7 @@ func run() int {
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
+					log.Printf("p1 -> X |%3d| Y|%3d|\n", px, py)
 					if victoir.Todo == true {
 						if px == victoir.X && py == victoir.Y {
 							player = checkRules(&values, &freeThrees, &capture, px, py, player)
@@ -597,12 +611,14 @@ func run() int {
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
+				log.Printf("IA -> X |%3d| Y|%3d|\n", victoir.X, victoir.Y)
 				player = checkRules(&values, &freeThrees, &capture, victoir.X, victoir.Y, player)
 				victoir.Todo = false	
 			} else {
 				var x, y int
 				x, y, better = search(&values, &freeThrees, player, px, py, 4, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
+				log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 				if values[y][x] == 0 {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)
 				}

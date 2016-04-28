@@ -66,7 +66,6 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 			} else if values[j][i] == player_two {
 				_ = renderer.SetDrawColor(52, 152, 219, 0)
 				drawOctogone(i, j)
-				// _ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 10), int32((j+1)*40 - 10), 20, 20})
 			}
 					
 			if freeThrees[j][i] != 0 {

@@ -90,32 +90,7 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 
 func draweval(renderer *sdl.Renderer, values *BoardData) {
 
-	// dr := func (x, y, lenx, leny int, vertical bool) {
-	// 	_ = renderer.SetDrawColor(0, 0, 0, 0)
-	// 	if (!vertical) {
-	// 		_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny - 2)
-	// 		_ = renderer.DrawLine(x, y - 1, x + lenx, y + leny - 1)
-	// 		_ = renderer.DrawLine(x, y, x + lenx, y + leny)
-	// 		_ = renderer.DrawLine(x, y + 1, x + lenx, y + leny + 1)
-	// 		_ = renderer.DrawLine(x, y + 2, x + lenx, y + leny + 2)
-	// 	} else {
-	// 		_ = renderer.DrawLine(x - 2, y, x - 2, y + leny)
-	// 		_ = renderer.DrawLine(x - 1, y, x - 1, y + leny)
-	// 		_ = renderer.DrawLine(x, y, x, y + leny)
-	// 		_ = renderer.DrawLine(x + 1, y, x + 1, y + leny)
-	// 		_ = renderer.DrawLine(x + 2, y, x + 2, y + leny)
-	// 	}
-	// 	return
-	// }
-
-	// bitValueAtPosition := func (number, pos int) bool {
-	// 	if bit := ((number >> uint(pos - 1)) & 1); bit == 1 {
-	// 		return true
-	// 	}
-	// 	return false
-	// }
-
-	font, err := ttf.OpenFont("/Library/Fonts/Arial.ttf", 9)
+	font, err := ttf.OpenFont("/Library/Fonts/Arial Black.ttf", 9)
 	if err != nil {
 		panic(err)
 	}
@@ -175,22 +150,6 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 					_ = renderer.DrawLine(((i+1)*40)-5, ((j+1)*40)+(k-5), ((i+1)*40)+5, ((j+1)*40)+(k-5))
 				}
 			}
-
-			// if freeThrees[j][i] != 0 {
-			// 	if bitValueAtPosition(freeThrees[j][i], 1) == true {
-			// 			dr((i+1)*40, ((j+1)*40)-15, 0, 30, true)
-			// 	}
-			// 	if bitValueAtPosition(freeThrees[j][i], 2) == true {
-			// 			dr((i+1)*40-15, ((j+1)*40), 30, 0, false)
-			// 	}
-			// 	if bitValueAtPosition(freeThrees[j][i], 3) == true {
-			// 			dr((i+1)*40-15, ((j+1)*40)+15, 30, -30, false)
-			// 	}
-			// 	if bitValueAtPosition(freeThrees[j][i], 4) == true {
-			// 			dr((i+1)*40-15, ((j+1)*40)-15, 30, 30, false)
-			// 	}
-			// }
-
 		}
 	}
 }

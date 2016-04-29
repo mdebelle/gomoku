@@ -1,25 +1,17 @@
 package main
 
-//import "math"
-//import "time"
-
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Position struct {
 	x, y int
 }
 
-// var stopByTime = false
-// var node = 0
+var nodesSearched = 0
 
-func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
-
-	var	ax, ay int
-//	var pos *Position
-//	lst := []*Position{}
-	var copy BoardData
-	var copy_capt Board
-
+func getSearchSpace(board, freeThrees *Board) map[Position]bool {
 	checkfree := func (b int) bool {
 		var j int
 		for i := uint(0); i < 4; i++ {
@@ -28,31 +20,31 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 		if j == 2 {return true}
 		return false
 	}
-	
+
 	m := make(map[Position]bool)
 
 	for i:= 0;i < 19; i++ {
 		for j:= 0;j < 19; j++ {
-			if values[i][j] != 0 {
+			if board[i][j] != 0 {
 
 				for circle := 1; circle < 3; circle++ {
 					a, b := i - circle, i + circle
 					for incx := j - (circle - 1); incx < j + circle; incx++ {
 						if incx < 0 { incx = 0 } else if incx > 18 { break }
-						if a >= 0 && values[a][incx] == 0 && !checkfree(freeThree[a][incx]) {
+						if a >= 0 && board[a][incx] == 0 && !checkfree(freeThrees[a][incx]) {
 							m[Position{incx, a}] = true
 						}
-						if b < 19 && values[b][incx] == 0 && !checkfree(freeThree[b][incx]) {
+						if b < 19 && board[b][incx] == 0 && !checkfree(freeThrees[b][incx]) {
 							m[Position{incx, b}] = true
 						}
 					}
 					a, b = j - circle, j + circle
 					for incy := i - circle; incy <= i + circle; incy++ {
 						if incy < 0 { incy = 0 } else if incy > 18 { break }
-						if a >= 0 && values[incy][a] == 0 && !checkfree(freeThree[incy][a]) {
+						if a >= 0 && board[incy][a] == 0 && !checkfree(freeThrees[incy][a]) {
 							m[Position{a, incy}] = true
 						}
-						if b < 19 && values[incy][b] == 0 && !checkfree(freeThree[incy][b]) {
+						if b < 19 && board[incy][b] == 0 && !checkfree(freeThrees[incy][b]) {
 							m[Position{b, incy}] = true
 						}
 					}
@@ -62,13 +54,26 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 		}
 	}
 
-	fmt.Printf("%v\n", m)
+	return m
+}
+
+func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
+
+	startTime := time.Now() // Debug
+
+	var	ax, ay int
+	var copy BoardData
+	var copy_capt Board
+
+	m := getSearchSpace(values, freeThree)
+
+//	fmt.Printf("%v\n", m)
 
 	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatifs
 
 	alpha := -int(^uint32(0)>>1)
 	beta := int(^uint32(0)>>1)
-	fmt.Printf("-> %d | %d\n", alpha, beta)
+//	fmt.Printf("-> %d | %d\n", alpha, beta)
 
 	for i, _ := range(m) {
 		s := evaluateBoard(values, i.x, i.y, player, &copy, capture)
@@ -80,7 +85,7 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 		s = -searchdeeper(values, -player, x, y, depth - 1, capture, -beta, -alpha)
 		undo_move(i.x, i.y, copy[i.y][i.x], values, &copy_capt)
 		capture[player+1] -= a
-		
+
 		if s >= beta {
 			return i.x, i.y, copy
 		}
@@ -93,46 +98,40 @@ func search(values, freeThree *Board, player, x, y, depth int, capture *[3]int) 
 		}
 	}
 
-	return ax, ay, copy
+	fmt.Println("Nodes searched : ", nodesSearched, ", average node computation time : ", time.Since(startTime) / time.Duration(nodesSearched))
 
+	return ax, ay, copy
 }
 
-func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha, beta int) int {
+func getSearchSpace2(board *Board) map[Position]bool {
 
-//	var pos *Position
-//	lst := []*Position{}
-	var copy_capt Board
-	var copy BoardData
-
-	if depth == 0 {
-		return evaluateBoard(values, x, y, player, &copy, capture)
-	}
+	defer timeFunc(time.Now(), "getSearchSpace2")
 
 	m := make(map[Position]bool)
 
 	for i:= 0;i < 19; i++ {
 		for j:= 0;j < 19; j++ {
 			
-			if values[i][j] != 0 {
+			if board[i][j] != 0 {
 
 				for circle := 1; circle < 3; circle++ {
 					a, b := i - circle, i + circle
 					for incx := j - (circle - 1); incx < j + circle; incx++ {
 						if incx < 0 { incx = 0 } else if incx > 18 { break }
-						if a >= 0 && values[a][incx] == 0 {
+						if a >= 0 && board[a][incx] == 0 {
 							m[Position{incx, a}] = true
 						}
-						if b < 19 && values[b][incx] == 0 {
+						if b < 19 && board[b][incx] == 0 {
 							m[Position{incx, b}] = true
 						}
 					}
 					a, b = j - circle, j + circle
 					for incy := i - circle; incy <= i + circle; incy++ {
 						if incy < 0 { incy = 0 } else if incy > 18 { break }
-						if a >= 0 && values[incy][a] == 0 {
+						if a >= 0 && board[incy][a] == 0 {
 							m[Position{a, incy}] = true
 						}
-						if b < 19 && values[incy][b] == 0 {
+						if b < 19 && board[incy][b] == 0 {
 							m[Position{b, incy}] = true
 						}
 					}
@@ -141,6 +140,22 @@ func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha
 			}
 		}
 	}
+
+	return m
+}
+
+func searchdeeper(values *Board, player, x, y, depth int, capture *[3]int, alpha, beta int) int {
+
+	nodesSearched++
+
+	var copy_capt Board
+	var copy BoardData
+
+	if depth == 0 {
+		return evaluateBoard(values, x, y, player, &copy, capture)
+	}
+
+	m := getSearchSpace2(values)
 
 	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatif
 	// node++

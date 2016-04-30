@@ -159,7 +159,7 @@ func doMove(board *Board, x, y, player int, captures *[]Position) {
 
 	board[y][x] = player
 	getCaptures(board, x, y, player, captures)
-	doCaptures2(board, captures)
+	doCaptures(board, captures)
 }
 
 func undoMove(board *Board, x, y, player int, captures *[]Position) {
@@ -174,7 +174,7 @@ func checkAlign(values *Board, x, y, player int) int {
 		cnt := 0
 		x, y = x + incx, y + incy
 		for i := 0; i < 4; i++ {
-			if !checkBounds(x, y) || values[y][x] == -p{
+			if !isInBounds(x, y) || values[y][x] == -p{
 				return cnt
 			}
 			if values[y][x] == p {
@@ -205,7 +205,7 @@ func checkAlign(values *Board, x, y, player int) int {
 
 func checkCapt(values *Board, x, y, player int) int {
 	capt := func (incx, incy int) int {
-		if !checkBounds(x + 3 * incx, y + 3 * incy) {
+		if !isInBounds(x + 3 * incx, y + 3 * incy) {
 			return 0
 		}
 		if	values[y + incy][x + incx] == -player &&

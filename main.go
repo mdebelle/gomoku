@@ -51,7 +51,7 @@ const (
 
 var victoir mustdo
 
-func checkBounds(x, y int) bool {
+func isInBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
 
@@ -59,7 +59,7 @@ func checkVictory(values *Board, nb int, y int, x int) bool {
 	f := func (incx, incy int) int {
 		x, y := x + incx, y + incy
 		for i := 0; i < 4; i++ {
-			if !checkBounds(x, y) || values[y][x] != nb {
+			if !isInBounds(x, y) || values[y][x] != nb {
 				return i
 			}
 			x += incx
@@ -78,7 +78,7 @@ func checkVictory(values *Board, nb int, y int, x int) bool {
 
 func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 	checkAxis := func (x, y, incx, incy int) bool {
-		if !checkBounds(x - incx, y - incy) || !checkBounds(x + 2 * incx, y + 2 * incy) {
+		if !isInBounds(x - incx, y - incy) || !isInBounds(x + 2 * incx, y + 2 * incy) {
 			return false
 		}
 		if values[y + incy][x + incx] == nb {
@@ -99,7 +99,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 	f := func (incx, incy int) bool {
 		x, y := x + incx, y + incy
 		for i := 0; i < 4; i++ {
-			if !checkBounds(x, y) || values[y][x] != nb {
+			if !isInBounds(x, y) || values[y][x] != nb {
 				return false
 			} else if checkAxis(x, y, -1, -1) || checkAxis(x, y, 1, 1) ||
 				checkAxis(x, y, 1, -1) || checkAxis(x, y, -1, 1) ||
@@ -127,13 +127,13 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 	)
 
 	checkAxis := func(x, y, incx, incy, axis int) {
-		if !checkBounds(x, y) || board[y][x] != empty {
+		if !isInBounds(x, y) || board[y][x] != empty {
 			return
 		}
 		flags := uint32(0)
 		tmp_x, tmp_y := x - incx*4, y - incy*4
 		for i := uint(0); i < 8; i++ {
-			if !checkBounds(tmp_x, tmp_y) {
+			if !isInBounds(tmp_x, tmp_y) {
 			} else if tmp_x == x && tmp_y == y {
 				tmp_x += incx
 				tmp_y += incy
@@ -188,7 +188,7 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 
 func getCaptures(board *Board, y, x, player  int, captures *[]Position) {
 	captureOnAxis := func (incx, incy int) {
-		if !checkBounds(x + 3 * incx, y + 3 * incy) {
+		if !isInBounds(x + 3 * incx, y + 3 * incy) {
 			return
 		}
 		if	board[y + incy][x + incx] == -player &&
@@ -208,7 +208,7 @@ func getCaptures(board *Board, y, x, player  int, captures *[]Position) {
 	captureOnAxis(1, 0)
 }
 
-func doCaptures2(board *Board, captures *[]Position) {
+func doCaptures(board *Board, captures *[]Position) {
 	for _, capture := range *captures {
 		board[capture.y][capture.x] = empty
 	}
@@ -255,7 +255,7 @@ func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, play
 	}
 	captures := make([]Position, 0, 16)
 	getCaptures(values, y, x, player, &captures)
-	doCaptures2(values, &captures)
+	doCaptures(values, &captures)
 	capture[player + 1] += len(captures)
 	updateFreeThrees(values, freeThrees, x, y, player, captures)
 	if capture[player + 1] >= 10 {
@@ -279,7 +279,7 @@ func gridAnalyse(values *Board, nb int) (int, int) {
 	f := func (incx, incy , x, y, nb int) int {
 		x, y = x + incx, y + incy
 		for i := 0; i < 4; i++ {
-			if !checkBounds(x, y) || values[y][x] != nb {
+			if !isInBounds(x, y) || values[y][x] != nb {
 				return i
 			}
 			x += incx

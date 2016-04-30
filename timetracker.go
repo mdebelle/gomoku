@@ -23,7 +23,9 @@ func timeFunc(start time.Time, funcName string) {
 }
 
 func displayAverages() {
+	fmt.Println("---------- Function times ----------")
 	for key, timer := range funcTimes {
 		fmt.Println(key, " : ", timer.totalTime / time.Duration(timer.count))
 	}
+	fmt.Println("------------------------------------")
 }

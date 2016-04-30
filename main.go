@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 	"log"
+	"container/list"
 
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
@@ -115,7 +116,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 	return f(incx, incy) || f(-incx, -incy)
 }
 
-func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
+func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 
 	defer timeFunc(time.Now(), "checkDoubletree")
 
@@ -123,11 +124,12 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		pat1 = 0x1A5 // -00--
 		pat2 = 0x199 // -0-0-
 		pat3 = 0x169 // --00-
-		mask = 0x3FF
+		mask = 0x3FF // 2 * 5 bits
 	)
 
+	/*
 	checkAxis := func(x, y, incx, incy, axis int) {
-		if !checkBounds(x, y) || values[y][x] != empty {
+		if !checkBounds(x, y) || board[y][x] != empty {
 			return
 		}
 		flags := uint32(0)
@@ -140,7 +142,7 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 				i--
 				continue
 			} else {
-				flags |= uint32(values[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
+				flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
 			}
 			tmp_x += incx
 			tmp_y += incy
@@ -167,25 +169,44 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 			freeThrees[y][x] &= ^axis
 		}
 	}
+*/
 
-	//i ->  4 3 2 1   0   1 2 3 4
-	//     | | | | | x,y | | | | |
-
-	//     { |o|o| |  -  | } | | |
-	//     { |o| |o|  -  | } | | |
-	//     { | |o|o|  -  | } | | |
-
-	//     | { |o|o|  -  | | } | |	
-	//     | { |o| |  -  |o| } | |
-	//     | { | |o|  -  |o| } | |
-
-	//     | | { |o|  -  |o| | } |
-	//     | | { |o|  -  | |o| } |
-	//     | | { | |  -  |o|o| } |
-
-	//     | | | { |  -  |o|o| | }
-	//     | | | { |  -  |o| |o| }
-	//     | | | { |  -  | |o|o| }
+	checkAxis := func(x, y, incx, incy, axis int) {
+	if !checkBounds(x, y) || board[y][x] != empty {
+		return
+	}
+	flags := uint32(0)
+	tmp_x, tmp_y := x - incx*4, y - incy*4
+	for i := uint(0); i < 8; i++ {
+		if !checkBounds(tmp_x, tmp_y) {
+			} else if tmp_x == x && tmp_y == y {
+				tmp_x += incx
+				tmp_y += incy
+				i--
+				continue
+			} else {
+			flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
+				}
+		tmp_x += incx
+			tmp_y += incy
+			}
+	if  ((flags >> (2*3)) & mask) == pat1 ||
+										 ((flags >> (2*3)) & mask) == pat2 ||
+										 ((flags >> (2*3)) & mask) == pat3 ||
+										 ((flags >> (2*2)) & mask) == pat1 ||
+										 ((flags >> (2*2)) & mask) == pat2 ||
+										 ((flags >> (2*2)) & mask) == pat3 ||
+										 ((flags >> (2*1)) & mask) == pat1 ||
+										 ((flags >> (2*1)) & mask) == pat2 ||
+										 ((flags >> (2*1)) & mask) == pat3 ||
+										 ((flags >> (2*0)) & mask) == pat1 ||
+										 ((flags >> (2*0)) & mask) == pat2 ||
+										 ((flags >> (2*0)) & mask) == pat3 {
+			freeThrees[y][x] |= axis
+		} else {
+		freeThrees[y][x] &= ^axis
+	}
+	}
 
 	for i := 1; i <= 4; i++ {
 		checkAxis(x, y + i, 0, 1, VerticalAxis)
@@ -197,31 +218,43 @@ func checkDoubleThree(values, freeThrees *Board, x, y, color int) {
 		checkAxis(x + i, y + i, 1, 1, RightDiagAxis)
 		checkAxis(x - i, y - i, 1, 1, RightDiagAxis)
 	}
-		
-	return
 }
 
-func doCaptures(values *Board, nb int, y int, x int) int {
-	forcapture := func (incx, incy int) int {
+func getCaptures(board *Board, y, x, player  int, captures *[]Position) {
+	captureOnAxis := func (incx, incy int) {
 		if !checkBounds(x + 3 * incx, y + 3 * incy) {
-			return 0
+			return
 		}
-		if	values[y + incy][x + incx] == -nb &&
-			values[y + 2 * incy][x + 2 * incx] == -nb &&
-		 	values[y + 3 * incy][x + 3 * incx] == nb {
-				values[y + incy][x + incx] = 0
-				values[y + 2 * incy][x + 2 * incx] = 0
-				return 2
+		if	board[y + incy][x + incx] == -player &&
+			board[y + 2 * incy][x + 2 * incx] == -player &&
+		 	board[y + 3 * incy][x + 3 * incx] == player {
+			*captures = append(*captures, Position{x + incx, y + incy})
+			*captures = append(*captures, Position{x + incx * 2, y + incy * 2})
 		}
-		return 0
 	}
-	return  forcapture(-1, -1) + forcapture(1, 1) +
-			forcapture(1, -1) + forcapture(-1, 1) +
-			forcapture(0, -1) + forcapture(0, 1) +
-			forcapture(-1, 0) + forcapture(1, 0)
+	captureOnAxis(-1, -1)
+	captureOnAxis(1, 1)
+	captureOnAxis(1, -1)
+	captureOnAxis(-1, 1)
+	captureOnAxis(0, -1)
+	captureOnAxis(0, 1)
+	captureOnAxis(-1, 0)
+	captureOnAxis(1, 0)
 }
 
-func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, player int) int {
+func doCaptures2(board *Board, captures *[]Position) {
+	for _, capture := range *captures {
+		board[capture.y][capture.x] = empty
+	}
+}
+
+func undoCaptures(board *Board, captures *[]Position, player int) {
+	for _, capture := range *captures {
+		board[capture.y][capture.x] = -player
+	}
+}
+
+func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
 	freeThreesCount := 0
 	playerId := (player + 1) / 2
 	for i := uint(0); i < 4; i++ {
@@ -229,21 +262,32 @@ func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, play
 			freeThreesCount++
 		}
 	}
-	if freeThreesCount == 2 {
+	return freeThreesCount == 2
+}
+
+func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures list.List) {
+	freeThrees[0][y][x] = 0
+	freeThrees[1][y][x] = 0
+	checkDoubleThree(board, &freeThrees[(player + 1) / 2], x, y, player)
+	checkDoubleThree(board, &freeThrees[(-player + 1) / 2], x, y, -player)
+}
+
+func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, player int) int {
+	if doesDoubleFreeThree(freeThrees, x, y, player) {
 		fmt.Printf("Nope\n")
 		return player
 	}
 	values[y][x] = player
-	freeThrees[0][y][x] = 0
-	freeThrees[1][y][x] = 0
-	checkDoubleThree(values, &freeThrees[playerId], x, y, player)
-	checkDoubleThree(values, &freeThrees[(-player + 1) / 2], x, y, -player)
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
 		fmt.Printf("Victoire \\o/ %d\n", player)
 		return 0
 	}
-	capture[player + 1] += doCaptures(values, player, y, x)
+	captures := make([]Position, 0, 16)
+	getCaptures(values, y, x, player, &captures)
+	fmt.Println(len(captures))
+	doCaptures2(values, &captures)
+	capture[player + 1] += len(captures)
 	if capture[player + 1] >= 10 {
 		fmt.Printf("capture de ouf \\o/ %d\n", player)
 		return 0
@@ -356,8 +400,6 @@ func run() int {
 	log.SetOutput(f)
 	log.Printf("---NEW GAME---\n")
 
-
-
 	sdl.Init(sdl.INIT_EVERYTHING)
 	if err := ttf.Init(); err != nil {
 		fmt.Println(err)
@@ -404,7 +446,7 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if  player == player_one &&  t.Type == 1025 {
+				if /*player == player_one &&*/  t.Type == 1025 {
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
@@ -416,6 +458,7 @@ func run() int {
 						} else {
 							fmt.Printf("you must play in [%d][%d]\n", victoir.X, victoir.Y)
 						}
+						fmt.Println(values)
 					} else if values[py][px] == 0 {
 						player = checkRules(&values, &freeThrees, &capture, px, py, player)
 					}
@@ -425,15 +468,13 @@ func run() int {
 				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-//*
+/*
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
 				log.Printf("IA -> X |%3d| Y|%3d|\n", victoir.X, victoir.Y)
 				player = checkRules(&values, &freeThrees, &capture, victoir.X, victoir.Y, player)
 				victoir.Todo = false
-
-				displayAverages()
 			} else {
 				var x, y int
 				x, y, better = search(&values, &freeThrees, player, px, py, 4, &capture)
@@ -442,8 +483,8 @@ func run() int {
 				if values[y][x] == 0 {
 					player = checkRules(&values, &freeThrees, &capture, x, y, player)
 				}
-				displayAverages()
 			}
+			displayAverages()
 		}
 //*/
 		_ = renderer.SetDrawColor(236, 240, 241, 0)

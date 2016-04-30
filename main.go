@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 	"log"
-	"container/list"
 
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
@@ -127,7 +126,6 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 		mask = 0x3FF // 2 * 5 bits
 	)
 
-	/*
 	checkAxis := func(x, y, incx, incy, axis int) {
 		if !checkBounds(x, y) || board[y][x] != empty {
 			return
@@ -169,45 +167,13 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 			freeThrees[y][x] &= ^axis
 		}
 	}
-*/
 
-	checkAxis := func(x, y, incx, incy, axis int) {
-	if !checkBounds(x, y) || board[y][x] != empty {
-		return
+	if board[y][x] == empty {
+		checkAxis(x, y, 0, 1, VerticalAxis)
+		checkAxis(x, y, 1, 0, HorizontalAxis)
+		checkAxis(x, y, 1, -1, LeftDiagAxis)
+		checkAxis(x, y, 1, 1, RightDiagAxis)
 	}
-	flags := uint32(0)
-	tmp_x, tmp_y := x - incx*4, y - incy*4
-	for i := uint(0); i < 8; i++ {
-		if !checkBounds(tmp_x, tmp_y) {
-			} else if tmp_x == x && tmp_y == y {
-				tmp_x += incx
-				tmp_y += incy
-				i--
-				continue
-			} else {
-			flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
-				}
-		tmp_x += incx
-			tmp_y += incy
-			}
-	if  ((flags >> (2*3)) & mask) == pat1 ||
-										 ((flags >> (2*3)) & mask) == pat2 ||
-										 ((flags >> (2*3)) & mask) == pat3 ||
-										 ((flags >> (2*2)) & mask) == pat1 ||
-										 ((flags >> (2*2)) & mask) == pat2 ||
-										 ((flags >> (2*2)) & mask) == pat3 ||
-										 ((flags >> (2*1)) & mask) == pat1 ||
-										 ((flags >> (2*1)) & mask) == pat2 ||
-										 ((flags >> (2*1)) & mask) == pat3 ||
-										 ((flags >> (2*0)) & mask) == pat1 ||
-										 ((flags >> (2*0)) & mask) == pat2 ||
-										 ((flags >> (2*0)) & mask) == pat3 {
-			freeThrees[y][x] |= axis
-		} else {
-		freeThrees[y][x] &= ^axis
-	}
-	}
-
 	for i := 1; i <= 4; i++ {
 		checkAxis(x, y + i, 0, 1, VerticalAxis)
 		checkAxis(x, y - i, 0, 1, VerticalAxis)
@@ -265,11 +231,15 @@ func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
 	return freeThreesCount == 2
 }
 
-func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures list.List) {
+func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures []Position) {
 	freeThrees[0][y][x] = 0
 	freeThrees[1][y][x] = 0
 	checkDoubleThree(board, &freeThrees[(player + 1) / 2], x, y, player)
 	checkDoubleThree(board, &freeThrees[(-player + 1) / 2], x, y, -player)
+	for _, pos := range captures {
+		checkDoubleThree(board, &freeThrees[(player + 1) / 2], pos.x, pos.y, player)
+		checkDoubleThree(board, &freeThrees[(-player + 1) / 2], pos.x, pos.y, -player)
+	}
 }
 
 func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, player int) int {
@@ -285,9 +255,9 @@ func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, play
 	}
 	captures := make([]Position, 0, 16)
 	getCaptures(values, y, x, player, &captures)
-	fmt.Println(len(captures))
 	doCaptures2(values, &captures)
 	capture[player + 1] += len(captures)
+	updateFreeThrees(values, freeThrees, x, y, player, captures)
 	if capture[player + 1] >= 10 {
 		fmt.Printf("capture de ouf \\o/ %d\n", player)
 		return 0

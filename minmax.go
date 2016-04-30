@@ -135,9 +135,11 @@ func searchdeeper(values *Board, freeThree *[2]Board, player, x, y, depth int, c
 		captures := make([]Position, 0, 16)
 		doMove(values, i.x, i.y, player, &captures)
 		capture[player + 1] += len(captures)
+		updateFreeThrees(values, freeThree, x, y, player, captures)
 		s := -searchdeeper(values, freeThree, -player, i.x, i.y, depth - 1, capture, -beta, -alpha)
 		undoMove(values, i.x, i.y, player, &captures)
 		capture[player+1] -= len(captures)
+		updateFreeThrees(values, freeThree, x, y, player, captures)
 
 		if s >= beta {
 			return s

@@ -20,11 +20,11 @@ func getSearchSpace(board *Board, freeThrees *[2]Board, player int) []Position {
 	alreadyChecked := [19][19]bool {}
 
 	checkAxis := func(x, y, incx, incy int) {
-		if isValidMove(board, freeThrees, x + incx, y + incy, player) && !alreadyChecked[y + incy][x + incy] {
+		if isValidMove(board, freeThrees, x + incx, y + incy, player) && !alreadyChecked[y + incy][x + incx] {
 			alreadyChecked[y + incy][x + incx] = true
 			moves = append(moves, Position{x + incx, y + incy})
 		}
-		if isValidMove(board, freeThrees, x - incx, y - incy, player) && !alreadyChecked[y - incy][x - incy] {
+		if isValidMove(board, freeThrees, x - incx, y - incy, player) && !alreadyChecked[y - incy][x - incx] {
 			alreadyChecked[y - incy][x - incx] = true
 			moves = append(moves, Position{x - incx, y - incy})
 		}

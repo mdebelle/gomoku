@@ -137,20 +137,23 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 			return
 		}
 		flags := uint32(0)
+
 		tmp_x, tmp_y := x - incx*4, y - incy*4
-		for i := uint(0); i < 8; i++ {
-			if !isInBounds(tmp_x, tmp_y) {
-			} else if tmp_x == x && tmp_y == y {
-				tmp_x += incx
-				tmp_y += incy
-				i--
-				continue
-			} else {
+		i := uint(0)
+		for ; i < 4; i++ {
+			if isInBounds(tmp_x, tmp_y) {
 				flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
 			}
-			tmp_x += incx
-			tmp_y += incy
+			tmp_x, tmp_y = tmp_x + incx, tmp_y + incy
 		}
+		tmp_x, tmp_y = x + incx, y + incy
+		for ; i < 8; i++ {
+			if isInBounds(tmp_x, tmp_y) {
+				flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
+			}
+			tmp_x, tmp_y = tmp_x + incx, tmp_y + incy
+		}
+
 		pos1 := (flags >> (2*3)) & mask
 		pos2 := (flags >> (2*2)) & mask
 		pos3 := (flags >> (2*1)) & mask

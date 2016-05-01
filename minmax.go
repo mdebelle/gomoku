@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"math"
 )
 
 type Position struct {
@@ -11,108 +12,87 @@ type Position struct {
 
 var nodesSearched = 0
 
-// copy[0] "score" ia
-// copy[1] "score" player 
-// copy[2] "capturable"
-// copy[3] forbiden ia
-// copy[4] forbiden player
-
-// var stopByTime = false
-// var node = 0
-
-func bitCount(b int) int {
-		var j int
-		for i := uint(0); i < 4; i++ {
-			if b & (1 << i) != 0 { j++}
-		}
-		return j
-}
-
-func getSearchSpace(board *Board, freeThree *[2]Board, player int) map[Position]bool {
+func getSearchSpace(board *Board, freeThrees *[2]Board, player int) []Position {
 
 	defer timeFunc(time.Now(), "getSearchSpace")
 
-	m := make(map[Position]bool)
+	moves := make([]Position, 0, 10)
+	alreadyChecked := [19][19]bool {}
 
-	playerId := (player + 1) / 2
-	for i:= 0;i < 19; i++ {
-		for j:= 0;j < 19; j++ {
-			if board[i][j] != 0 {
+	checkAxis := func(x, y, incx, incy int) {
+		if isValidMove(board, freeThrees, x + incx, y + incy, player) && !alreadyChecked[y + incy][x + incy] {
+			alreadyChecked[y + incy][x + incx] = true
+			moves = append(moves, Position{x + incx, y + incy})
+		}
+		if isValidMove(board, freeThrees, x - incx, y - incy, player) && !alreadyChecked[y - incy][x - incy] {
+			alreadyChecked[y - incy][x - incx] = true
+			moves = append(moves, Position{x - incx, y - incy})
+		}
+	}
 
-				for circle := 1; circle < 3; circle++ {
-					a, b := i - circle, i + circle
-					for incx := j - (circle - 1); incx < j + circle; incx++ {
-						if incx < 0 { incx = 0 } else if incx > 18 { break }
-						if a >= 0 && board[a][incx] == 0 && bitCount(freeThree[playerId][a][incx]) != 2 {
-							m[Position{incx, a}] = true
-						}
-						if b < 19 && board[b][incx] == 0 && bitCount(freeThree[playerId][b][incx]) != 2 {
-							m[Position{incx, b}] = true
-						}
-					}
-					a, b = j - circle, j + circle
-					for incy := i - circle; incy <= i + circle; incy++ {
-						if incy < 0 { incy = 0 } else if incy > 18 { break }
-						if a >= 0 && board[incy][a] == 0 && bitCount(freeThree[playerId][incy][a]) != 2 {
-							m[Position{a, incy}] = true
-						}
-						if b < 19 && board[incy][b] == 0 && bitCount(freeThree[playerId][incy][b]) != 2 {
-							m[Position{b, incy}] = true
-						}
-					}
+	for y := 0; y < 19; y++ {
+		for x := 0; x < 19; x++ {
+			if board[y][x] != empty {
+				for i := 0; i < 2; i++ {
+					checkAxis(x, y, i, 0)
+					checkAxis(x, y, 0, i)
+					checkAxis(x, y, i, i)
+					checkAxis(x, y, i, -i)
 				}
 			}
 		}
 	}
-	return m
+
+	return moves
 }
 
 func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
 
 	nodesSearched = 0
+	startTime := time.Now()
 
 	var	ax, ay int
 	var copy BoardData
 
-	m := getSearchSpace(values, freeThree, player)
+	moves := getSearchSpace(values, freeThree, player)
 
-	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatifs
+	bestscore := math.MinInt32
+	alpha := math.MinInt32
+	beta := math.MaxInt32
 
-	alpha := -int(^uint32(0)>>1)
-	beta := int(^uint32(0)>>1)
-
-	for i, _ := range(m) {
-		score := evaluateBoard(values, i.x, i.y, player, &copy, capture)
+	for _, move := range(moves) {
+		score := evaluateBoard(values, move.x, move.y, player, &copy, capture)
 		if score >= 20 {
-			return i.x, i.y, copy
+			return move.x, move.y, copy
 		}
 
 		captures := make([]Position, 0, 16)
-		doMove(values, i.x, i.y, player, &captures)
+		doMove(values, move.x, move.y, player, &captures)
 		capture[player + 1] += len(captures)
-		s := -searchdeeper(values, freeThree, -player, i.x, i.y, depth - 1, capture, -beta, -alpha)
-		undoMove(values, i.x, i.y, player, &captures)
+		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
+		s := -searchdeeper(values, freeThree, -player, move.x, move.y, depth - 1, capture, -beta, -alpha)
+		undoMove(values, move.x, move.y, player, &captures)
 		capture[player + 1] -= len(captures)
+		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
 
 		if s >= beta {
-			return i.x, i.y, copy
+			return move.x, move.y, copy
 		}
 		if s > bestscore {
 			bestscore = s
-			ax, ay = i.x, i.y
+			ax, ay = move.x, move.y
 			if s > alpha {
 				alpha = s
 			}
 		}
 	}
-	fmt.Println(nodesSearched)
+
+	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime))
 
 	return ax, ay, copy
 }
 
 func searchdeeper(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int, alpha, beta int) int {
-
-	//var copy_capt Board
 
 	nodesSearched++
 
@@ -122,24 +102,24 @@ func searchdeeper(values *Board, freeThree *[2]Board, player, x, y, depth int, c
 		return evaluateBoard(values, x, y, player, &copy, capture)
 	}
 
-	m := getSearchSpace(values, freeThree, player)
+	moves := getSearchSpace(values, freeThree, player)
 
-	bestscore := -int(^uint32(0)>>1) // int le plus large possible dans les negatif
+	bestscore := math.MinInt32
 
-	for i, _ := range(m) {
-		score := evaluateBoard(values, i.x, i.y, player, &copy, capture)
+	for _, move := range(moves) {
+		score := evaluateBoard(values, move.x, move.y, player, &copy, capture)
 		if score >= 20 {
 			return score
 		}
 
 		captures := make([]Position, 0, 16)
-		doMove(values, i.x, i.y, player, &captures)
+		doMove(values, move.x, move.y, player, &captures)
 		capture[player + 1] += len(captures)
-		updateFreeThrees(values, freeThree, x, y, player, captures)
-		s := -searchdeeper(values, freeThree, -player, i.x, i.y, depth - 1, capture, -beta, -alpha)
-		undoMove(values, i.x, i.y, player, &captures)
+		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
+		s := -searchdeeper(values, freeThree, -player, move.x, move.y, depth - 1, capture, -beta, -alpha)
+		undoMove(values, move.x, move.y, player, &captures)
 		capture[player+1] -= len(captures)
-		updateFreeThrees(values, freeThree, x, y, player, captures)
+		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
 
 		if s >= beta {
 			return s
@@ -221,6 +201,8 @@ func checkCapt(values *Board, x, y, player int) int {
 
 func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
 	
+	defer timeFunc(time.Now(), "evaluateBoard")
+
 	var v1, v2, v3 int
 
 	v1 = checkAlign(values, x, y, player)

@@ -3,6 +3,8 @@ package main
 import (
 	"time"
 	"fmt"
+	"text/tabwriter"
+	"os"
 )
 
 type funcTime struct {
@@ -22,10 +24,19 @@ func timeFunc(start time.Time, funcName string) {
 	}
 }
 
+func resetTimer() {
+	funcTimes = make(map[string]funcTime)
+}
+
 func displayAverages() {
+	w := new(tabwriter.Writer)
+
+	w.Init(os.Stdout, 8, 0, 2, ' ', 0)
 	fmt.Println("---------- Function times ----------")
+	
 	for key, timer := range funcTimes {
-		fmt.Println(key, " : ", timer.totalTime / time.Duration(timer.count))
+		fmt.Fprintln(w, key, "\t", timer.count, "\t", timer.totalTime, "\t", timer.totalTime / time.Duration(timer.count))
 	}
+	w.Flush()
 	fmt.Println("------------------------------------")
 }

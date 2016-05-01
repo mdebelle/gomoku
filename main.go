@@ -55,6 +55,12 @@ func isInBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
 
+func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
+	return isInBounds(x, y) &&
+		board[y][x] == empty &&
+		!doesDoubleFreeThree(freeThrees, x, y, player)
+}
+
 func checkVictory(values *Board, nb int, y int, x int) bool {
 	f := func (incx, incy int) int {
 		x, y := x + incx, y + incy
@@ -117,7 +123,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 
 func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 
-	defer timeFunc(time.Now(), "checkDoubletree")
+	defer timeFunc(time.Now(), "checkDoubleThree")
 
 	const (
 		pat1 = 0x1A5 // -00--
@@ -223,8 +229,9 @@ func undoCaptures(board *Board, captures *[]Position, player int) {
 func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
 	freeThreesCount := 0
 	playerId := (player + 1) / 2
+	point := freeThrees[playerId][y][x]
 	for i := uint(0); i < 4; i++ {
-		if (freeThrees[playerId][y][x] & (1 << i)) != 0 {
+		if (point & (1 << i)) != 0 {
 			freeThreesCount++
 		}
 	}
@@ -232,11 +239,20 @@ func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
 }
 
 func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures []Position) {
-	freeThrees[0][y][x] = 0
-	freeThrees[1][y][x] = 0
+	// TODO: Two functions -> update from move and update from move cancelation
+	defer timeFunc(time.Now(), "updateFreeThree")
+
+	if (board[y][x] != empty) {
+		freeThrees[0][y][x] = 0
+		freeThrees[1][y][x] = 0
+	}
 	checkDoubleThree(board, &freeThrees[(player + 1) / 2], x, y, player)
 	checkDoubleThree(board, &freeThrees[(-player + 1) / 2], x, y, -player)
 	for _, pos := range captures {
+		if (board[pos.y][pos.x] != empty) {
+			freeThrees[0][pos.y][pos.x] = 0
+			freeThrees[1][pos.y][pos.x] = 0
+		}
 		checkDoubleThree(board, &freeThrees[(player + 1) / 2], pos.x, pos.y, player)
 		checkDoubleThree(board, &freeThrees[(-player + 1) / 2], pos.x, pos.y, -player)
 	}
@@ -416,7 +432,7 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if /*player == player_one &&*/  t.Type == 1025 {
+				if player == player_one && t.Type == 1025 {
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
@@ -438,7 +454,7 @@ func run() int {
 				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-/*
+//*
 		if player == player_two {
 			if victoir.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
@@ -455,6 +471,7 @@ func run() int {
 				}
 			}
 			displayAverages()
+			resetTimer()
 		}
 //*/
 		_ = renderer.SetDrawColor(236, 240, 241, 0)

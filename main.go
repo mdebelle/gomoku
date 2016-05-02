@@ -56,6 +56,7 @@ func isInBounds(x, y int) bool {
 }
 
 func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
+
 	return isInBounds(x, y) &&
 		board[y][x] == empty &&
 		!doesDoubleFreeThree(freeThrees, x, y, player)

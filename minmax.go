@@ -66,6 +66,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 			return move.x, move.y, copy
 		}
 
+		// TODO: A Board class with a 'putStone' function that does all that stuff inside
 		captures := make([]Position, 0, 16)
 		doMove(values, move.x, move.y, player, &captures)
 		capture[player + 1] += len(captures)

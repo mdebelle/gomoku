@@ -56,7 +56,6 @@ func isInBounds(x, y int) bool {
 }
 
 func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
-
 	return isInBounds(x, y) &&
 		board[y][x] == empty &&
 		!doesDoubleFreeThree(freeThrees, x, y, player)
@@ -83,6 +82,7 @@ func checkVictory(values *Board, nb int, y int, x int) bool {
 	return false
 }
 
+// TODO: Create a liist of possible anti-victory captures
 func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 	checkAxis := func (x, y, incx, incy int) bool {
 		if !isInBounds(x - incx, y - incy) || !isInBounds(x + 2 * incx, y + 2 * incy) {
@@ -123,6 +123,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 }
 
 func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
+	// TODO: SOOOOO SLOOOOOW do something
 
 	defer timeFunc(time.Now(), "checkDoubleThree")
 
@@ -139,6 +140,7 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 		}
 		flags := uint32(0)
 
+		// TODO: Perform this formatting on the entire line/column/diagonal
 		tmp_x, tmp_y := x - incx*4, y - incy*4
 		i := uint(0)
 		for ; i < 4; i++ {
@@ -436,7 +438,13 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
+
+				/*
 				if player == player_one && t.Type == 1025 {
+				/*/
+					if t.Type == 1025 {
+				//*/
+
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)

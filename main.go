@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
-	"math/rand"
+//	"math/rand"
 	"runtime"
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
@@ -46,10 +46,11 @@ type BoardData [19][19][5]int
 
 const (
 	winTitle string = "Go-Gomoku"
+	winTitleDebug string = "Go-Debug"
 	winWidth, winHeight int = 800, 880
 )
 
-var victoir mustdo
+var victory mustdo
 
 func isInBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
@@ -90,14 +91,14 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 		}
 		if values[y + incy][x + incx] == nb {
 			if values[y + 2 * incy][x + 2 * incx] == -nb && values[y - incy][x - incx] == 0 {
-				victoir.X = x - incx
-				victoir.Y = y - incy
-				victoir.Todo = true
+				victory.X = x - incx
+				victory.Y = y - incy
+				victory.Todo = true
 				return true
 			} else if values[y + 2 * incy][x + 2 * incx] == 0   && values[y - incy][x - incx] == -nb {
-				victoir.X = x + 2 * incx
-				victoir.Y = y + 2 * incy
-				victoir.Todo = true
+				victory.X = x + 2 * incx
+				victory.Y = y + 2 * incy
+				victory.Todo = true
 				return true
 			}
 		}
@@ -151,6 +152,8 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 		for ; i < 8; i++ {
 			if isInBounds(tmp_x, tmp_y) {
 				flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
+			} else {
+				break
 			}
 			tmp_x, tmp_y = tmp_x + incx, tmp_y + incy
 		}
@@ -160,17 +163,17 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 		pos3 := (flags >> (2*1)) & mask
 		pos4 := flags & mask
 		createsFreeThree := pos4 == pat1 ||
-			pos4 == pat2 ||
-			pos4 == pat3 ||
-			pos3 == pat1 ||
-			pos3 == pat2 ||
-			pos3 == pat3 ||
-			pos2 == pat1 ||
-			pos2 == pat2 ||
-			pos2 == pat3 ||
-			pos1 == pat1 ||
-			pos1 == pat2 ||
-			pos1 == pat3
+							pos4 == pat2 ||
+							pos4 == pat3 ||
+							pos3 == pat1 ||
+							pos3 == pat2 ||
+							pos3 == pat3 ||
+							pos2 == pat1 ||
+							pos2 == pat2 ||
+							pos2 == pat3 ||
+							pos1 == pat1 ||
+							pos1 == pat2 ||
+							pos1 == pat3
 		if createsFreeThree {
 			freeThrees[y][x] |= axis
 		} else {
@@ -270,7 +273,7 @@ func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, play
 	values[y][x] = player
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
-		fmt.Printf("Victoire \\o/ %d\n", player)
+		fmt.Printf("Victorye \\o/ %d\n", player)
 		return 0
 	}
 	captures := make([]Position, 0, 16)
@@ -295,68 +298,6 @@ func mousePositionToGrid(val float64) int {
 	return t
 }
 
-func gridAnalyse(values *Board, nb int) (int, int) {
-	f := func (incx, incy , x, y, nb int) int {
-		x, y = x + incx, y + incy
-		for i := 0; i < 4; i++ {
-			if !isInBounds(x, y) || values[y][x] != nb {
-				return i
-			}
-			x += incx
-			y += incy
-		}
-		return 5
-	}
-	betterx, bettery := -1, -1
-	max := 0
-	for i := 0; i < 19; i++ {
-		for j := 0; j < 19; j++ {
-			if (values[i][j] == 0) {
-				var t int
-				tmp := f(-1, -1, j, i, player_two) + f(1, 1, j, i, player_two)
-				t = f(1, -1, j, i, player_two) + f(-1, 1, j, i, player_two)
-				if t > tmp {
-					tmp = t
-				}
-				t = f(0, -1, j, i, player_two) + f(0, 1, j, i, player_two)
-				if t > tmp {
-					tmp = t
-				}
-				t = f(-1, 0, j, i, player_two) + f(1, 0, j, i, player_two)
-				if t > tmp {
-					tmp = t
-				}
-				t = (f(-1, -1, j, i, player_one) + f(1, 1, j, i, player_one)) * 2
-				if t > tmp {
-					tmp = t
-				}
-				t = (f(1, -1, j, i, player_one) + f(-1, 1, j, i, player_one)) * 2
-				if t > tmp {
-					tmp = t
-				}
-				t = (f(0, -1, j, i, player_one) + f(0, 1, j, i, player_one)) * 2
-				if t > tmp {
-					tmp = t
-				}
-				t = (f(-1, 0, j, i, player_one) + f(1, 0, j, i, player_one)) * 2
-				if t > tmp {
-					tmp = t
-				}
-				if tmp > max {
-					max = tmp
-					bettery = i
-					betterx = j
-				}
-			}
-		}
-	}
-	if (betterx < 0) {
-		betterx = rand.Int() % 19
-		bettery = rand.Int() % 19
-	}
-	return betterx, bettery
-}
-
 func init() {
     runtime.LockOSThread()
 }
@@ -374,7 +315,7 @@ func run() int {
 	var running bool
 	var err error
 	var player int
-	victoir.Todo = false
+	victory.Todo = false
 	var capture [3]int
 	var values Board
 	var freeThrees [2]Board
@@ -411,7 +352,7 @@ func run() int {
 	}
 	defer renderer.Destroy()
 
-	windowb, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+	windowb, err := sdl.CreateWindow(winTitleDebug, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
@@ -441,12 +382,12 @@ func run() int {
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
 					log.Printf("p1 -> X |%3d| Y|%3d|\n", px, py)
-					if victoir.Todo == true {
-						if px == victoir.X && py == victoir.Y {
+					if victory.Todo == true {
+						if px == victory.X && py == victory.Y {
 							player = checkRules(&values, &freeThrees, &capture, px, py, player)
-							victoir.Todo = false
+							victory.Todo = false
 						} else {
-							fmt.Printf("you must play in [%d][%d]\n", victoir.X, victoir.Y)
+							fmt.Printf("you must play in [%d][%d]\n", victory.X, victory.Y)
 						}
 						fmt.Println(values)
 					} else if values[py][px] == 0 {
@@ -458,16 +399,16 @@ func run() int {
 				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
-//*
+
 		if player == player_two {
-			if victoir.Todo == true {
-				fmt.Printf("IA must play -> x[%d] y [%d]\n", victoir.X, victoir.Y)
-				log.Printf("IA -> X |%3d| Y|%3d|\n", victoir.X, victoir.Y)
-				player = checkRules(&values, &freeThrees, &capture, victoir.X, victoir.Y, player)
-				victoir.Todo = false
+			if victory.Todo == true {
+				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)
+				log.Printf("IA -> X |%3d| Y|%3d|\n", victory.X, victory.Y)
+				player = checkRules(&values, &freeThrees, &capture, victory.X, victory.Y, player)
+				victory.Todo = false
 			} else {
 				var x, y int
-				x, y, better = search(&values, &freeThrees, player, px, py, 4, &capture)
+				x, y, better = search(&values, &freeThrees, player, px, py, 5, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 				if values[y][x] == 0 {
@@ -477,7 +418,7 @@ func run() int {
 			displayAverages()
 			resetTimer()
 		}
-//*/
+
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()
 		drawGrid(renderer)

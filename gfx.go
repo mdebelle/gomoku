@@ -69,7 +69,7 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 				_ = renderer.SetDrawColor(52, 152, 219, 0)
 				drawOctogone(i, j)
 			}
-					
+
 			if freeThrees[j][i] != 0 {
 				if bitValueAtPosition(freeThrees[j][i], 1) == true {
 						dr((i+1)*40, ((j+1)*40)-15, 0, 30, true)
@@ -84,7 +84,6 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 						dr((i+1)*40-15, ((j+1)*40)-15, 30, 30, false)
 				}
 			}
-
 		}
 	}
 	_ = renderer.SetDrawColor(231, 76, 60, 0)

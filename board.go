@@ -6,6 +6,7 @@ import (
 
 type AIBoard struct {
 	board		Board
+	// TODO: Split arrays into named members
 	freeThrees	[2]Board
 	capturesNb	[3]int
 	player		int
@@ -125,7 +126,8 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	}
 	v3 = board.checkCaptures(pos, board.player)
 	if v3 > 0 {
-		if board.capturesNb[board.player + 1] + v3 >= 10 { // TODO: Refacto this kind of things
+		// TODO: Refacto this kind of things (board.capturesNb[board.player + 1], Yuck!)
+		if board.capturesNb[board.player + 1] + v3 >= 10 {
 			return 20
 		}
 		return board.capturesNb[board.player + 1] + v3 + 2

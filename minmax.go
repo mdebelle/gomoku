@@ -66,16 +66,12 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 			return move.x, move.y, copy
 		}
 
-		captures := make([]Position, 0, 16)
-		doMove(values, move.x, move.y, player, &captures)
-		capture[player + 1] += len(captures)
-		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
 		b := AIBoard{*values, *freeThree, *capture, player}
+		captures := b.DoMove(move)
+		b.UpdateFreeThrees(move, captures)
 		s := -searchdeeper(&b, move, depth - 1, -beta, -alpha)
-		undoMove(values, move.x, move.y, player, &captures)
-		capture[player + 1] -= len(captures)
-		// TODO: Dont do this. Use a proper free three history
-		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
+		b.UndoMove(move, &captures)
+		b.UpdateFreeThrees(move, captures)
 
 		if s >= beta {
 			return move.x, move.y, copy

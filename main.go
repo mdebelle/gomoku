@@ -82,7 +82,7 @@ func checkVictory(values *Board, nb int, y int, x int) bool {
 	return false
 }
 
-// TODO: Create a liist of possible anti-victory captures
+// TODO: Create a list of possible anti-victory captures
 func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 	checkAxis := func (x, y, incx, incy int) bool {
 		if !isInBounds(x - incx, y - incy) || !isInBounds(x + 2 * incx, y + 2 * incy) {

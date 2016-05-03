@@ -66,14 +66,15 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 			return move.x, move.y, copy
 		}
 
-		// TODO: A Board class with a 'putStone' function that does all that stuff inside
 		captures := make([]Position, 0, 16)
 		doMove(values, move.x, move.y, player, &captures)
 		capture[player + 1] += len(captures)
 		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
-		s := -searchdeeper(values, freeThree, -player, move.x, move.y, depth - 1, capture, -beta, -alpha)
+		b := AIBoard{*values, *freeThree, *capture, player}
+		s := -searchdeeper(&b, move, depth - 1, -beta, -alpha)
 		undoMove(values, move.x, move.y, player, &captures)
 		capture[player + 1] -= len(captures)
+		// TODO: Dont do this. Use a proper free three history
 		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
 		if s >= beta {
 			return move.x, move.y, copy
@@ -92,35 +93,24 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	return ax, ay, copy
 }
 
-func searchdeeper(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int, alpha, beta int) int {
+func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 
 	nodesSearched++
 
-	var copy BoardData
-
+	b.SwitchPlayer()
+	defer b.SwitchPlayer()
 	if depth == 0 {
-		return evaluateBoard(values, x, y, player, &copy, capture)
+		return b.Evaluate(move)
 	}
-
-	moves := getSearchSpace(values, freeThree, player)
-
 	bestscore := math.MinInt32
-
-	for _, move := range(moves) {
-		score := evaluateBoard(values, move.x, move.y, player, &copy, capture)
+	for _, move := range(b.GetSearchSpace()) {
+		score := b.Evaluate(move)
 		if score >= 20 {
 			return score
 		}
-
-		captures := make([]Position, 0, 16)
-		doMove(values, move.x, move.y, player, &captures)
-		capture[player + 1] += len(captures)
-		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
-		s := -searchdeeper(values, freeThree, -player, move.x, move.y, depth - 1, capture, -beta, -alpha)
-		undoMove(values, move.x, move.y, player, &captures)
-		capture[player+1] -= len(captures)
-		updateFreeThrees(values, freeThree, move.x, move.y, player, captures)
-
+		captures := b.DoMove(move)
+		s := -searchdeeper(b, move, depth - 1, -beta, -alpha)
+		b.UndoMove(move, &captures)
 		if s >= beta {
 			return s
 		}
@@ -199,6 +189,7 @@ func checkCapt(values *Board, x, y, player int) int {
 			capt(0, -1) + capt(0, 1) + capt(-1, 0) + capt(1, 0)
 }
 
+// TODO: Deep search doesnt need a BoardData
 func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
 
 	defer timeFunc(time.Now(), "evaluateBoard")

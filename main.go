@@ -52,6 +52,8 @@ const (
 
 var victory mustdo
 
+var textDrawer *TextDrawer
+
 func isInBounds(x, y int) bool {
 	return x >= 0 && y >= 0 && x < 19 && y < 19
 }
@@ -105,8 +107,8 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 		return false
 	}
 	f := func (incx, incy int) bool {
-		x, y := x + incx, y + incy
-		for i := 0; i < 4; i++ {
+		x, y := x, y
+		for i := 0; i < 5; i++ {
 			if !isInBounds(x, y) || values[y][x] != nb {
 				return false
 			} else if checkAxis(x, y, -1, -1) || checkAxis(x, y, 1, 1) ||
@@ -347,6 +349,9 @@ func run() int {
 	}
 	defer ttf.Quit()
 
+	textDrawer = NewTextDrawer()
+	defer textDrawer.Dispose()
+
 	window, err := sdl.CreateWindow(winTitle, 800, 0,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
@@ -387,7 +392,7 @@ func run() int {
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 
-				//*
+				/*
 				if player == player_one && t.Type == 1025 {
 				/*/
 					if t.Type == 1025 {
@@ -415,7 +420,7 @@ func run() int {
 			}
 		}
 
-		//*
+		/*
 		if player == player_two {
 			if victory.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)

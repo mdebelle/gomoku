@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+	"math"
 )
 
 type AIBoard struct {
@@ -118,17 +119,17 @@ func (board *AIBoard) Evaluate(pos Position) int {
 
 	v1 = board.checkAlign(pos, board.player)
 	if v1 >= 4 {
-		return 20
+		return math.MaxInt32
 	}
 	v2 = -board.checkAlign(pos, -board.player )
 	if v2 <= -4 {
-		return -20
+		return math.MinInt32
 	}
 	v3 = board.checkCaptures(pos, board.player)
 	if v3 > 0 {
 		// TODO: Refacto this kind of things (board.capturesNb[board.player + 1], Yuck!)
 		if board.capturesNb[board.player + 1] + v3 >= 10 {
-			return 20
+			return math.MaxInt32
 		}
 		return board.capturesNb[board.player + 1] + v3 + 2
 	}

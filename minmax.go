@@ -196,18 +196,18 @@ func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3
 	v1 = checkAlign(values, x, y, player)
 	copy[y][x][0] = v1
 	if v1 >= 4 {
-		return 20
+		return math.MaxInt32
 	}
 	v2 = -checkAlign(values, x, y, -player )
 	copy[y][x][1] = -v2
 	if v2 <= -4 {
-		return -20
+		return math.MinInt32
 	}
 	v3 = checkCapt(values, x, y, player)
 	copy[y][x][2] = v3
 	if v3 > 0 {
 		if capture[player + 1] + v3 >= 10 {
-			return 20
+			return math.MaxInt32
 		}
 		return capture[player + 1] + v3 + 2
 	}

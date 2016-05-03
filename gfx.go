@@ -18,10 +18,9 @@ func drawGrid(renderer *sdl.Renderer) {
 	}	
 }
 
-func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees *Board) {
+func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees *[2]Board) {
 
 	dr := func (x, y, lenx, leny int, vertical bool) {
-		_ = renderer.SetDrawColor(0, 0, 0, 0)
 		if (!vertical) {
 			_ = renderer.DrawLine(x, y - 2, x + lenx, y + leny - 2)
 			_ = renderer.DrawLine(x, y - 1, x + lenx, y + leny - 1)
@@ -59,43 +58,54 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 		_ = renderer.DrawLine((i+1)*40 - 5, (j+1)*40 + 10, (i+1)*40 + 5, (j+1)*40 + 10)
 	}
 
-	for i := 0; i < 19; i++ {
-		for j := 0; j < 19; j++ {
-			if values[j][i] == player_one {
-				_ = renderer.SetDrawColor(231, 76, 60, 0)
-				drawOctogone(i, j)
-
-			} else if values[j][i] == player_two {
-				_ = renderer.SetDrawColor(52, 152, 219, 0)
-				drawOctogone(i, j)
+	drawDoubleFree := func (i, j, player int) {
+		freeThrees := &freeThrees[(player + 1) / 2]
+		if doesDoubleFreeThreePlayer(freeThrees, i, j) {
+			if bitValueAtPosition(freeThrees[j][i], 1) == true {
+				dr((i+1)*40, ((j+1)*40)-15, 0, 30, true)
 			}
-
-			if freeThrees[j][i] != 0 {
-				if bitValueAtPosition(freeThrees[j][i], 1) == true {
-						dr((i+1)*40, ((j+1)*40)-15, 0, 30, true)
-				}
-				if bitValueAtPosition(freeThrees[j][i], 2) == true {
-						dr((i+1)*40-15, ((j+1)*40), 30, 0, false)
-				}
-				if bitValueAtPosition(freeThrees[j][i], 3) == true {
-						dr((i+1)*40-15, ((j+1)*40)+15, 30, -30, false)
-				}
-				if bitValueAtPosition(freeThrees[j][i], 4) == true {
-						dr((i+1)*40-15, ((j+1)*40)-15, 30, 30, false)
-				}
+			if bitValueAtPosition(freeThrees[j][i], 2) == true {
+				dr((i+1)*40-15, ((j+1)*40), 30, 0, false)
+			}
+			if bitValueAtPosition(freeThrees[j][i], 3) == true {
+				dr((i+1)*40-15, ((j+1)*40)+15, 30, -30, false)
+			}
+			if bitValueAtPosition(freeThrees[j][i], 4) == true {
+				dr((i+1)*40-15, ((j+1)*40)-15, 30, 30, false)
 			}
 		}
 	}
-	_ = renderer.SetDrawColor(231, 76, 60, 0)
+
+	for i := 0; i < 19; i++ {
+		for j := 0; j < 19; j++ {
+			if values[j][i] == player_one {
+				_ = renderer.SetDrawColor(231, 76, 60, 255)
+				drawOctogone(i, j)
+
+			} else if values[j][i] == player_two {
+				_ = renderer.SetDrawColor(52, 152, 219, 255)
+				drawOctogone(i, j)
+			}
+
+			_ = renderer.SetDrawColor(220, 20, 60, 255)
+			drawDoubleFree(i, j, player_one)
+			_ = renderer.SetDrawColor(21, 96, 189, 255)
+			drawDoubleFree(i, j, player_two)
+		}
+	}
+	_ = renderer.SetDrawColor(231, 76, 60, 255)
 	for i := 0; i < capture[0]; i++ {
 		_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 10), int32(800 - 10), 20, 20})
 	}
-	_ = renderer.SetDrawColor(52, 152, 219, 0)
+	_ = renderer.SetDrawColor(52, 152, 219, 255)
 	for i := 0; i < capture[2]; i++ {
 		_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 10), int32(840 - 10), 20, 20})
 	}
 
-
+	if (victory.Todo == true) {
+		_ = renderer.SetDrawColor(220, 32, 220, 255)
+		_ = renderer.FillRect(&sdl.Rect{int32((victory.X+1)*40 - 10), int32((victory.Y+1)*40 - 10), 20, 20})
+	}
 }
 
 func draweval(renderer *sdl.Renderer, values *BoardData) {

@@ -387,7 +387,7 @@ func run() int {
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 
-				/*
+				//*
 				if player == player_one && t.Type == 1025 {
 				/*/
 					if t.Type == 1025 {
@@ -415,6 +415,7 @@ func run() int {
 			}
 		}
 
+		//*
 		if player == player_two {
 			if victory.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)
@@ -433,6 +434,7 @@ func run() int {
 			displayAverages()
 			resetTimer()
 		}
+		//*/
 
 		_ = renderer.SetDrawColor(236, 240, 241, 0)
 		renderer.Clear()

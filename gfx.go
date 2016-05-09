@@ -18,6 +18,22 @@ func drawGrid(renderer *sdl.Renderer) {
 	}	
 }
 
+func drawPanel(renderer *sdl.Renderer) {
+	
+	renderer.Clear()
+
+	_ = renderer.SetDrawColor(44, 62, 80, 255)
+	_ = renderer.FillRect(&sdl.Rect{0, 0, 800, 880})
+	_ = renderer.SetDrawColor(149, 165, 166, 255)
+	_ = renderer.FillRect(&sdl.Rect{10, 400, 780, 80})
+
+	textDrawer.Draw(renderer, "Payer vs Computer Press 1", 400, 420)
+	textDrawer.Draw(renderer, "Payer vs Player Press 2", 400, 440)
+
+	renderer.Present()
+
+}
+
 func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees *[2]Board) {
 
 	dr := func (x, y, lenx, leny int, vertical bool) {

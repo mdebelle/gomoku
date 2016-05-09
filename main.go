@@ -332,6 +332,8 @@ func run() int {
 	var freeThrees [2]Board
 	var better BoardData
 
+	var player_mode int
+
 	f, err := os.OpenFile("testlogfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create file: %s\n", err)
@@ -395,7 +397,7 @@ func run() int {
 				/*
 				if player == player_one && t.Type == 1025 {
 				/*/
-					if t.Type == 1025 {
+				if player_mode > 0  && t.Type == 1025 {
 				//*/
 
 					py = mousePositionToGrid(float64(t.Y))
@@ -416,12 +418,19 @@ func run() int {
 					evaluateAllBoard(player, &values, &better, &capture)
 				}
 			case *sdl.KeyUpEvent:
-				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+				if player_mode == 0 && t.Type == 769 && t.Keysym.Sym == '1' {
+					player_mode = 1
+				} else if player_mode == 0 && t.Type == 769 && t.Keysym.Sym == '2' {
+					player_mode = 2
+				}
+				if t.Type == 769 && t.Keysym.Sym == 'q' {
+					running = false
+				}
+//				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
 
-		/*
-		if player == player_two {
+		if player_mode == 1 && player == player_two {
 			if victory.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)
 				log.Printf("IA -> X |%3d| Y|%3d|\n", victory.X, victory.Y)
@@ -441,18 +450,23 @@ func run() int {
 		}
 		//*/
 
-		_ = renderer.SetDrawColor(236, 240, 241, 0)
-		renderer.Clear()
-		drawGrid(renderer)
-		drawClic(renderer, &values, &capture, &freeThrees)
-		renderer.Present()
+		if player_mode > 0 {
+			_ = renderer.SetDrawColor(236, 240, 241, 0)
+			renderer.Clear()
+			drawGrid(renderer)
+			drawClic(renderer, &values, &capture, &freeThrees)
+			renderer.Present()
 
-		_ = rendererb.SetDrawColor(236, 240, 241, 0)
-		rendererb.Clear()
-		drawGrid(rendererb)
-		drawClic(rendererb, &values, &capture, &freeThrees)
-		draweval(rendererb, &better)
-		rendererb.Present()
+			_ = rendererb.SetDrawColor(236, 240, 241, 0)
+			rendererb.Clear()
+			drawGrid(rendererb)
+			drawClic(rendererb, &values, &capture, &freeThrees)
+			draweval(rendererb, &better)
+			rendererb.Present()
+		} else {
+			drawPanel(renderer)
+			drawPanel(rendererb)
+		}
 	}
 	return 0
 }

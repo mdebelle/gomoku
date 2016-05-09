@@ -397,7 +397,7 @@ func run() int {
 				/*
 				if player == player_one && t.Type == 1025 {
 				/*/
-				if player_mode > 0  && t.Type == 1025 {
+				if  t.Type == 1025 && ((player_mode == 1 && player == player_one) || (player_mode == 2)) {
 				//*/
 
 					py = mousePositionToGrid(float64(t.Y))
@@ -418,15 +418,15 @@ func run() int {
 					evaluateAllBoard(player, &values, &better, &capture)
 				}
 			case *sdl.KeyUpEvent:
-				if player_mode == 0 && t.Type == 769 && t.Keysym.Sym == '1' {
+				if player_mode == 0 && t.Type == 769 && (t.Keysym.Sym == '1' || t.Keysym.Sym == 1073741913) {
 					player_mode = 1
-				} else if player_mode == 0 && t.Type == 769 && t.Keysym.Sym == '2' {
+				} else if player_mode == 0 && t.Type == 769 && (t.Keysym.Sym == '2' || t.Keysym.Sym == 1073741914) {
 					player_mode = 2
 				}
-				if t.Type == 769 && t.Keysym.Sym == 'q' {
+				if t.Type == 769 && (t.Keysym.Sym == 'q' || t.Keysym.Sym == 27) {
 					running = false
 				}
-//				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+			//	fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%d\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
 

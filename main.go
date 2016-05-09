@@ -333,6 +333,7 @@ func run() int {
 	var better BoardData
 
 	var player_mode int
+	var debug		bool
 
 	f, err := os.OpenFile("testlogfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {
@@ -368,21 +369,9 @@ func run() int {
 	}
 	defer renderer.Destroy()
 
-	windowb, err := sdl.CreateWindow(winTitleDebug, 0, 0,
-		winWidth, winHeight, sdl.WINDOW_SHOWN)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
-		return 1
-	}
-	defer windowb.Destroy()
-	rendererb, err := sdl.CreateRenderer(windowb, -1, sdl.RENDERER_ACCELERATED)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
-		return 2
-	}
-	defer rendererb.Destroy()
+	var windowb *sdl.Window
+	var rendererb *sdl.Renderer
 
-	_= rendererb.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
 	running = true
 	player = 1
 	var px, py int
@@ -393,13 +382,7 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-
-				/*
-				if player == player_one && t.Type == 1025 {
-				/*/
 				if  t.Type == 1025 && ((player_mode == 1 && player == player_one) || (player_mode == 2)) {
-				//*/
-
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
@@ -426,6 +409,33 @@ func run() int {
 				if t.Type == 769 && (t.Keysym.Sym == 'q' || t.Keysym.Sym == 27) {
 					running = false
 				}
+				if player_mode > 0 && t.Type == 769 && t.Keysym.Sym == 'd' {
+					if debug == false {
+						windowb, err = sdl.CreateWindow(winTitleDebug, 0, 0,
+							winWidth, winHeight, sdl.WINDOW_SHOWN)
+						if err != nil {
+							fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
+							return 1
+						}
+						defer windowb.Destroy()
+						rendererb, err = sdl.CreateRenderer(windowb, -1, sdl.RENDERER_ACCELERATED)
+						if err != nil {
+							fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
+							return 2
+						}
+						defer rendererb.Destroy()
+
+						_= rendererb.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
+						debug = true
+					} else {
+						rendererb.Destroy()
+						windowb.Destroy()
+						debug = false
+					}
+
+				}
+
+
 			//	fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%d\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
@@ -448,7 +458,6 @@ func run() int {
 			displayAverages()
 			resetTimer()
 		}
-		//*/
 
 		if player_mode > 0 {
 			_ = renderer.SetDrawColor(236, 240, 241, 0)
@@ -457,15 +466,17 @@ func run() int {
 			drawClic(renderer, &values, &capture, &freeThrees)
 			renderer.Present()
 
-			_ = rendererb.SetDrawColor(236, 240, 241, 0)
-			rendererb.Clear()
-			drawGrid(rendererb)
-			drawClic(rendererb, &values, &capture, &freeThrees)
-			draweval(rendererb, &better)
-			rendererb.Present()
+			if debug == true {
+				_ = rendererb.SetDrawColor(236, 240, 241, 0)
+				rendererb.Clear()
+				drawGrid(rendererb)
+				drawClic(rendererb, &values, &capture, &freeThrees)
+				draweval(rendererb, &better)
+				rendererb.Present()
+			}
 		} else {
 			drawPanel(renderer)
-			drawPanel(rendererb)
+			if debug == true { drawPanel(rendererb) }
 		}
 	}
 	return 0

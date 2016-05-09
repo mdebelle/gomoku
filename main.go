@@ -284,7 +284,7 @@ func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, play
 	values[y][x] = player
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
-		fmt.Printf("Victorye \\o/ %d\n", player)
+		fmt.Printf("Victory \\o/ %d\n", player)
 		return 0
 	}
 	captures := make([]Position, 0, 16)
@@ -432,10 +432,7 @@ func run() int {
 						windowb.Destroy()
 						debug = false
 					}
-
 				}
-
-
 			//	fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%d\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
@@ -465,7 +462,6 @@ func run() int {
 			drawGrid(renderer)
 			drawClic(renderer, &values, &capture, &freeThrees)
 			renderer.Present()
-
 			if debug == true {
 				_ = rendererb.SetDrawColor(236, 240, 241, 0)
 				rendererb.Clear()

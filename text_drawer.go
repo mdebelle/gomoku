@@ -11,7 +11,7 @@ type TextDrawer struct {
 }
 
 func NewTextDrawer() *TextDrawer {
-	font, err := ttf.OpenFont("/Library/Fonts/Arial Black.ttf", 10)
+	font, err := ttf.OpenFont("/Library/Fonts/Arial Black.ttf", 20)
 	if err != nil {
 		panic(err)
 	}

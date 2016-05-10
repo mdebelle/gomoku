@@ -433,6 +433,22 @@ func run() int {
 						debug = false
 					}
 				}
+				if player == 0 && t.Type == 769 && t.Keysym.Sym == 'a' {
+					capture = [3]int {0,0,0}
+					var emptyvalues Board
+					values = emptyvalues
+					var emptyfreeThrees [2]Board
+					freeThrees = emptyfreeThrees
+					var emptybetter BoardData
+					better =  emptybetter
+					player_mode = 0
+					if debug == true {
+						rendererb.Destroy()
+						windowb.Destroy()
+						debug = false
+					}
+					player = 1
+				}
 			//	fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%d\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
@@ -461,6 +477,9 @@ func run() int {
 			renderer.Clear()
 			drawGrid(renderer)
 			drawClic(renderer, &values, &capture, &freeThrees)
+			if player == 0 {
+				drawRestartPanel(renderer)
+			}
 			renderer.Present()
 			if debug == true {
 				_ = rendererb.SetDrawColor(236, 240, 241, 0)

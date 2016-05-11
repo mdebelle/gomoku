@@ -49,6 +49,9 @@ func (board *AIBoard) isValidMove(x, y int) bool {
 }
 
 func (board *AIBoard) GetSearchSpace() []Position {
+
+	defer timeFunc(time.Now(), "getSearchSpace")
+
 	moves := make([]Position, 0, 10)
 	alreadyChecked := [19][19]bool {}
 
@@ -112,10 +115,11 @@ func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 }
 
 func (board *AIBoard) Evaluate(pos Position) int {
+	// -v2
 
 	defer timeFunc(time.Now(), "evaluateBoard")
 
-	var v1, v2, v3 int
+	var v1, v2 int
 
 	v1 = board.checkAlign(pos, board.player)
 	if v1 >= 4 {
@@ -125,6 +129,7 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	if v2 <= -4 {
 		return math.MinInt32
 	}
+	/*
 	v3 = board.checkCaptures(pos, board.player)
 	if v3 > 0 {
 		// TODO: Refacto this kind of things (board.capturesNb[board.player + 1], Yuck!)
@@ -133,13 +138,18 @@ func (board *AIBoard) Evaluate(pos Position) int {
 		}
 		return board.capturesNb[board.player + 1] + v3 + 2
 	}
-	if (-v2 * 2) > v1 {
+	if (v2 * 2) > v1 {
 		return v2
 	}
 	return v1
+	*/
+	return v1 + v2 * 2 + board.capturesNb[board.player + 1] - board.capturesNb[-board.player + 1]
 }
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {
+
+	defer timeFunc(time.Now(), "checkCaptures")
+
 	x, y := pos.x, pos.y
 	capt := func (incx, incy int) int {
 		if !isInBounds(x + 3 * incx, y + 3 * incy) {
@@ -157,6 +167,8 @@ func (board *AIBoard) checkCaptures(pos Position, player int) int {
 }
 
 func (board *AIBoard) checkAlign(pos Position, player int) int {
+	defer timeFunc(time.Now(), "checkAlign")
+
 	f := func (incx, incy, x, y int) int {
 		cnt := 0
 		x, y = x + incx, y + incy

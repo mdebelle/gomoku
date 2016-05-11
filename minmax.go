@@ -52,7 +52,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	startTime := time.Now()
 
 	var	ax, ay int
-	var copy BoardData
+	var boardData BoardData
 
 	moves := getSearchSpace(values, freeThree, player)
 
@@ -60,22 +60,29 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	alpha := math.MinInt32
 	beta := math.MaxInt32
 
+	// TODO: Parallelize
 	for _, move := range(moves) {
-		score := evaluateBoard(values, move.x, move.y, player, &copy, capture)
-		if score >= 20 {
-			return move.x, move.y, copy
-		}
-
 		b := AIBoard{*values, *freeThree, *capture, player}
 		captures := b.DoMove(move)
+		boardData[move.y][move.x][6] = 1
+		score := evaluateBoard(values, move.x, move.y, player, &boardData, capture)
+		boardData[move.y][move.x][5] = score
+		if score >= 20 {
+			b.UndoMove(move, &captures)
+			return move.x, move.y, boardData
+		}
+
 		b.UpdateFreeThrees(move, captures)
 		s := -searchdeeper(&b, move, depth - 1, -beta, -alpha)
+//		boardData[move.y][move.x][5] = s
 		b.UndoMove(move, &captures)
 		b.UpdateFreeThrees(move, captures)
 
+		/*
 		if s >= beta {
-			return move.x, move.y, copy
+			return move.x, move.y, boardData
 		}
+*/
 		if s > bestscore {
 			bestscore = s
 			ax, ay = move.x, move.y
@@ -87,7 +94,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 
 	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime))
 
-	return ax, ay, copy
+	return ax, ay, boardData
 }
 
 func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
@@ -101,11 +108,12 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 	}
 	bestscore := math.MinInt32
 	for _, move := range(b.GetSearchSpace()) {
+		captures := b.DoMove(move) //
 		score := b.Evaluate(move)
 		if score >= 20 {
+			b.UndoMove(move, &captures)
 			return score
 		}
-		captures := b.DoMove(move)
 		s := -searchdeeper(b, move, depth - 1, -beta, -alpha)
 		b.UndoMove(move, &captures)
 		if s >= beta {
@@ -188,31 +196,34 @@ func checkCapt(values *Board, x, y, player int) int {
 
 // TODO: Deep search doesnt need a BoardData
 func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
+	// -v2
 
 	defer timeFunc(time.Now(), "evaluateBoard")
 
-	var v1, v2, v3 int
+	var v1, v2 int
 
 	v1 = checkAlign(values, x, y, player)
 	copy[y][x][0] = v1
 	if v1 >= 4 {
 		return math.MaxInt32
 	}
-	v2 = -checkAlign(values, x, y, -player )
-	copy[y][x][1] = -v2
+	v2 = checkAlign(values, x, y, -player )
+	copy[y][x][1] = v2
 	if v2 <= -4 {
 		return math.MinInt32
 	}
-	v3 = checkCapt(values, x, y, player)
-	copy[y][x][2] = v3
+	copy[y][x][2] = checkCapt(values, x, y, player)
+	/*
 	if v3 > 0 {
 		if capture[player + 1] + v3 >= 10 {
 			return math.MaxInt32
 		}
 		return capture[player + 1] + v3 + 2
 	}
-	if (-v2 * 2) > v1 {
+	if (v2 * 2) > v1 {
 		return v2
 	}
 	return v1
+*/
+	return v1 + v2 * 2 + capture[player + 1] - capture[-player + 1]
 }

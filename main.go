@@ -41,8 +41,10 @@ type FreeThreesAxis [2][19][19]int
 // copy[2] "capturable"
 // copy[3] forbiden ia
 // copy[4] forbiden player
-// TODO: Make it an object
-type BoardData [19][19][5]int
+// korpy[5] score
+// porky[6] isTested?
+// TODO: Make it an object (or not..)
+type BoardData [19][19][7]int
 
 const (
 	winTitle string = "Go-Gomoku"

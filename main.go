@@ -205,7 +205,7 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 	}
 }
 
-func getCaptures(board *Board, y, x, player  int, captures *[]Position) {
+func getCaptures(board *Board, x, y, player  int, captures *[]Position) {
 	captureOnAxis := func (incx, incy int) {
 		if !isInBounds(x + 3 * incx, y + 3 * incy) {
 			return
@@ -290,7 +290,7 @@ func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, play
 		return 0
 	}
 	captures := make([]Position, 0, 16)
-	getCaptures(values, y, x, player, &captures)
+	getCaptures(values, x, y, player, &captures)
 	doCaptures(values, &captures)
 	capture[player + 1] += len(captures)
 	updateFreeThrees(values, freeThrees, x, y, player, captures)
@@ -305,7 +305,7 @@ func mousePositionToGrid(val float64) int {
 	t := int(math.Floor((val - 20) / 40))
 	if t < 0 {
 		t = 0
-	} else if t > 18{
+	} else if t > 18 {
 		t = 18
 	}
 	return t

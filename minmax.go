@@ -64,8 +64,11 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	for _, move := range(moves) {
 		b := AIBoard{*values, *freeThree, *capture, player}
 		captures := b.DoMove(move)
+		fmt.Println("BITE DE CHIEN", move, b.CapturesNb())
 		boardData[move.y][move.x][6] = 1
-		score := evaluateBoard(values, move.x, move.y, player, &boardData, capture)
+//		score := b.Evaluate(move)
+//		score := evaluateBoard(values, move.x, move.y, player, &boardData, capture)
+		score := evaluateBoard(b.Board(), move.x, move.y, player, &boardData, b.CapturesNb())
 		boardData[move.y][move.x][5] = score
 		if score >= 20 {
 			b.UndoMove(move, &captures)
@@ -74,7 +77,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 
 		b.UpdateFreeThrees(move, captures)
 		s := -searchdeeper(&b, move, depth - 1, -beta, -alpha)
-//		boardData[move.y][move.x][5] = s
+		boardData[move.y][move.x][5] = s
 		b.UndoMove(move, &captures)
 		b.UpdateFreeThrees(move, captures)
 
@@ -82,7 +85,8 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		if s >= beta {
 			return move.x, move.y, boardData
 		}
-*/
+		*/
+
 		if s > bestscore {
 			bestscore = s
 			ax, ay = move.x, move.y
@@ -93,6 +97,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	}
 
 	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime))
+	fmt.Println("BEST : ", bestscore)
 
 	return ax, ay, boardData
 }
@@ -196,6 +201,7 @@ func checkCapt(values *Board, x, y, player int) int {
 
 // TODO: Deep search doesnt need a BoardData
 func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
+	// C'est de la grosse merde !
 	// -v2
 
 	defer timeFunc(time.Now(), "evaluateBoard")
@@ -207,9 +213,9 @@ func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3
 	if v1 >= 4 {
 		return math.MaxInt32
 	}
-	v2 = checkAlign(values, x, y, -player )
+	v2 = checkAlign(values, x, y, -player)
 	copy[y][x][1] = v2
-	if v2 <= -4 {
+	if v2 >= 4 {
 		return math.MinInt32
 	}
 	copy[y][x][2] = checkCapt(values, x, y, player)
@@ -225,5 +231,5 @@ func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3
 	}
 	return v1
 */
-	return v1 + v2 * 2 + capture[player + 1] - capture[-player + 1]
+	return v1 + v2 * 2 + capture[player + 1] * 7 - capture[-player + 1] * 7
 }

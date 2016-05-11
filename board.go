@@ -115,6 +115,7 @@ func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 }
 
 func (board *AIBoard) Evaluate(pos Position) int {
+	// C'est de la grosse merde !
 	// -v2
 
 	defer timeFunc(time.Now(), "evaluateBoard")
@@ -125,8 +126,8 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	if v1 >= 4 {
 		return math.MaxInt32
 	}
-	v2 = -board.checkAlign(pos, -board.player )
-	if v2 <= -4 {
+	v2 = board.checkAlign(pos, -board.player)
+	if v2 >= 4 {
 		return math.MinInt32
 	}
 	/*
@@ -143,7 +144,7 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	}
 	return v1
 	*/
-	return v1 + v2 * 2 + board.capturesNb[board.player + 1] - board.capturesNb[-board.player + 1]
+	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
 }
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {

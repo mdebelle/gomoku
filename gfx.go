@@ -140,8 +140,7 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
-			if values[j][i][6] != 0 {
-
+			if values[j][i][0] != 0 {
 				switch {
 					case values[j][i][0] > 4:
 						alpha = 240
@@ -159,17 +158,8 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 				for k := 0; k < 20; k++ {
 					_ = renderer.DrawLine(((i+1)*40)-10, ((j+1)*40)+(k-10), ((i+1)*40), ((j+1)*40)+(k-10))
 				}
-
-				if (values[j][i][5] > 2e9) {
-					textDrawer.Draw(renderer, "∞", (i + 1) * 40, (j + 1) * 40)
-				} else if (values[j][i][5] < -2e9) {
-					textDrawer.Draw(renderer, "-∞", (i + 1) * 40, (j + 1) * 40)
-				} else {
-					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][5]), (i + 1) * 40, (j + 1) * 40)
-				}
 			}
 			if values[j][i][1] != 0 {
-
 				switch {
 					case values[j][i][1] > 4:
 						alpha = 240
@@ -189,6 +179,15 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 			if values[j][i][2] != 0 {
 				_ = renderer.SetDrawColor(46, 204, 113, 255)
 				_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 5), int32((j+1)*40 - 5), 10, 10})
+			}
+			if values[j][i][5] != 0 {
+				if (values[j][i][5] > 2e9) {
+					textDrawer.Draw(renderer, "∞", (i + 1) * 40, (j + 1) * 40)
+				} else if (values[j][i][5] < -2e9) {
+					textDrawer.Draw(renderer, "-∞", (i + 1) * 40, (j + 1) * 40)
+				} else {
+					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][5]), (i + 1) * 40, (j + 1) * 40)
+				}
 			}
 		}
 	}

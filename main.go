@@ -13,7 +13,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
-//const debug = true
+const debug = false
 
 const (
 	empty = 0
@@ -132,7 +132,7 @@ func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
 func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 	// TODO: SOOOOO SLOOOOOW do something
 
-	defer timeFunc(time.Now(), "checkDoubleThree")
+	if debug { defer timeFunc(time.Now(), "checkDoubleThree") }
 
 	const (
 		pat1 = 0x1A5 // -00--
@@ -262,7 +262,7 @@ func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
 
 func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures []Position) {
 	// TODO: Two functions -> update from move and update from move cancelation
-	defer timeFunc(time.Now(), "updateFreeThree")
+	if debug { defer timeFunc(time.Now(), "updateFreeThree") }
 
 	if (board[y][x] != empty) {
 		freeThrees[0][y][x] = 0

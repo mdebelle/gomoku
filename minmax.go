@@ -15,7 +15,7 @@ var nodesSearched = 0
 
 func getSearchSpace(board *Board, freeThrees *[2]Board, player int) []Position {
 
-	defer timeFunc(time.Now(), "getSearchSpace")
+	if debug { defer timeFunc(time.Now(), "getSearchSpace") }
 
 	moves := make([]Position, 0, 10)
 	alreadyChecked := [19][19]bool {}
@@ -140,7 +140,8 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 }
 
 func doMove(board *Board, x, y, player int, captures *[]Position) {
-	defer timeFunc(time.Now(), "doMove")
+
+	if debug { defer timeFunc(time.Now(), "doMove") }
 
 	board[y][x] = player
 	getCaptures(board, x, y, player, captures)
@@ -148,7 +149,8 @@ func doMove(board *Board, x, y, player int, captures *[]Position) {
 }
 
 func undoMove(board *Board, x, y, player int, captures *[]Position) {
-	defer timeFunc(time.Now(), "undoMove")
+
+	if debug { defer timeFunc(time.Now(), "undoMove") }
 
 	board[y][x] = empty
 	undoCaptures(board, captures, player)
@@ -209,7 +211,7 @@ func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3
 	// C'est de la grosse merde !
 	// -v2
 
-	defer timeFunc(time.Now(), "evaluateBoard")
+	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 
 	var v1, v2 int
 

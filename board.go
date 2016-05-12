@@ -73,7 +73,7 @@ func (board *AIBoard) isValidMove(x, y int) bool {
 
 func (board *AIBoard) GetSearchSpace() []Position {
 
-	defer timeFunc(time.Now(), "getSearchSpace")
+	if debug { defer timeFunc(time.Now(), "getSearchSpace") }
 
 	moves := make([]Position, 0, 10)
 	alreadyChecked := [19][19]bool {}
@@ -126,7 +126,7 @@ func (board *AIBoard) UndoMove(pos Position, captures *[]Position) {
 
 func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 	// TODO: Two functions -> update from move and update from move cancelation
-	defer timeFunc(time.Now(), "updateFreeThree")
+	if debug { defer timeFunc(time.Now(), "updateFreeThree") }
 
 	if (board.board[pos.y][pos.x] != empty) {
 		board.freeThrees[0][pos.y][pos.x] = 0
@@ -148,7 +148,7 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	// C'est de la grosse merde !
 	// -v2
 
-	defer timeFunc(time.Now(), "evaluateBoard")
+	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 
 	var v1, v2 int
 
@@ -164,7 +164,7 @@ func (board *AIBoard) Evaluate(pos Position) int {
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {
 
-	defer timeFunc(time.Now(), "checkCaptures")
+	if debug { defer timeFunc(time.Now(), "checkCaptures") }
 
 	x, y := pos.x, pos.y
 	capt := func (incx, incy int) int {
@@ -183,7 +183,7 @@ func (board *AIBoard) checkCaptures(pos Position, player int) int {
 }
 
 func (board *AIBoard) checkAlign(pos Position, player int) int {
-	defer timeFunc(time.Now(), "checkAlign")
+	if debug { defer timeFunc(time.Now(), "checkAlign") }
 
 	f := func (incx, incy, x, y int) int {
 		cnt := 0

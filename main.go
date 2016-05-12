@@ -13,6 +13,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
+//const debug = true
+
 const (
 	empty = 0
 	player_one = 1

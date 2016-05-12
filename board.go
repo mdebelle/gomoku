@@ -3,7 +3,28 @@ package main
 import (
 	"time"
 	"math"
+//	"sort"
 )
+
+type Move struct {
+	pos			Position
+	captures	[]Position
+	heuristic	int
+}
+
+type ByHeuristic []Move
+
+func (s ByHeuristic) Len() int {
+	return len(s)
+}
+
+func (s ByHeuristic) Swap(a, b int) {
+	s[a], s[b] = s[b], s[a]
+}
+
+func (s ByHeuristic) Less(a, b int) bool {
+	return s[a].heuristic < s[b].heuristic
+}
 
 type AIBoard struct {
 	board		Board
@@ -11,11 +32,6 @@ type AIBoard struct {
 	freeThrees	[2]Board
 	capturesNb	[3]int
 	player		int
-}
-
-type Move struct {
-	pos			Position
-	captures	[]Position
 }
 
 func (board *AIBoard) Board() *Board {
@@ -126,25 +142,10 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	if v1 >= 4 {
 		return math.MaxInt32
 	}
+
 	v2 = board.checkAlign(pos, -board.player)
-	if v2 >= 4 {
-		return math.MinInt32
-	}
-	/*
-	v3 = board.checkCaptures(pos, board.player)
-	if v3 > 0 {
-		// TODO: Refacto this kind of things (board.capturesNb[board.player + 1], Yuck!)
-		if board.capturesNb[board.player + 1] + v3 >= 10 {
-			return math.MaxInt32
-		}
-		return board.capturesNb[board.player + 1] + v3 + 2
-	}
-	if (v2 * 2) > v1 {
-		return v2
-	}
-	return v1
-	*/
-	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
+
+	return v1 + v2 * 2 + board.capturesNb[board.player + 1] - board.capturesNb[-board.player + 1]
 }
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {

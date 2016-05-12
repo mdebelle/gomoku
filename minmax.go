@@ -64,10 +64,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	for _, move := range(moves) {
 		b := AIBoard{*values, *freeThree, *capture, player}
 		captures := b.DoMove(move)
-		fmt.Println("BITE DE CHIEN", move, b.CapturesNb())
 		boardData[move.y][move.x][6] = 1
-//		score := b.Evaluate(move)
-//		score := evaluateBoard(values, move.x, move.y, player, &boardData, capture)
 		score := evaluateBoard(b.Board(), move.x, move.y, player, &boardData, b.CapturesNb())
 		boardData[move.y][move.x][5] = score
 		if score >= 20 {
@@ -81,11 +78,9 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		b.UndoMove(move, &captures)
 		b.UpdateFreeThrees(move, captures)
 
-		/*
 		if s >= beta {
 			return move.x, move.y, boardData
 		}
-		*/
 
 		if s > bestscore {
 			bestscore = s
@@ -111,6 +106,7 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 	if depth == 0 {
 		return b.Evaluate(move)
 	}
+
 	bestscore := math.MinInt32
 	for _, move := range(b.GetSearchSpace()) {
 		captures := b.DoMove(move) //
@@ -121,9 +117,11 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 		}
 		s := -searchdeeper(b, move, depth - 1, -beta, -alpha)
 		b.UndoMove(move, &captures)
+
 		if s >= beta {
 			return s
 		}
+
 		if s > bestscore {
 			bestscore = s
 			if s > alpha {
@@ -215,21 +213,6 @@ func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3
 	}
 	v2 = checkAlign(values, x, y, -player)
 	copy[y][x][1] = v2
-	if v2 >= 4 {
-		return math.MinInt32
-	}
-	copy[y][x][2] = checkCapt(values, x, y, player)
-	/*
-	if v3 > 0 {
-		if capture[player + 1] + v3 >= 10 {
-			return math.MaxInt32
-		}
-		return capture[player + 1] + v3 + 2
-	}
-	if (v2 * 2) > v1 {
-		return v2
-	}
-	return v1
-*/
-	return v1 + v2 * 2 + capture[player + 1] * 7 - capture[-player + 1] * 7
+
+	return v1 + v2 * 2 + capture[player + 1] - capture[-player + 1]
 }

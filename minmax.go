@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"math"
+	"sort"
 )
 
 type Position struct {
@@ -67,7 +68,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		boardData[move.y][move.x][6] = 1
 		score := evaluateBoard(b.Board(), move.x, move.y, player, &boardData, b.CapturesNb())
 		boardData[move.y][move.x][5] = score
-		if score >= 20 {
+		if score >= 2e9 {
 			b.UndoMove(move, &captures)
 			return move.x, move.y, boardData
 		}
@@ -91,7 +92,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		}
 	}
 
-	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime))
+	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")
 	fmt.Println("BEST : ", bestscore)
 
 	return ax, ay, boardData
@@ -100,6 +101,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 
 	nodesSearched++
+	bestscore := math.MinInt32
 
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()
@@ -107,16 +109,21 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 		return b.Evaluate(move)
 	}
 
-	bestscore := math.MinInt32
-	for _, move := range(b.GetSearchSpace()) {
-		captures := b.DoMove(move) //
-		score := b.Evaluate(move)
-		if score >= 20 {
-			b.UndoMove(move, &captures)
-			return score
+	positions := b.GetSearchSpace()
+	moves := make([]Move, 0, len(positions))
+	for _, pos := range(positions) {
+		moves = append(moves, b.CreateMove(pos))
+	}
+
+	sort.Sort(sort.Reverse(ByScore(moves)))
+
+	for _, move := range(moves) {
+		if move.Score() >= 2e9 {
+			return move.Score()
 		}
-		s := -searchdeeper(b, move, depth - 1, -beta, -alpha)
-		b.UndoMove(move, &captures)
+		captures := b.DoMove(move.Position()) // That sucks : Already have captures !
+		s := -searchdeeper(b, move.Position(), depth - 1, -beta, -alpha)
+		b.UndoMove(move.Position(), &captures)
 
 		if s >= beta {
 			return s

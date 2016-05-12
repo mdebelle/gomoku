@@ -3,27 +3,34 @@ package main
 import (
 	"time"
 	"math"
-//	"sort"
 )
 
 type Move struct {
 	pos			Position
 	captures	[]Position
-	heuristic	int
+	score		int
 }
 
-type ByHeuristic []Move
+type ByScore []Move
 
-func (s ByHeuristic) Len() int {
-	return len(s)
+func (this ByScore) Len() int {
+	return len(this)
 }
 
-func (s ByHeuristic) Swap(a, b int) {
-	s[a], s[b] = s[b], s[a]
+func (this ByScore) Swap(a, b int) {
+	this[a], this[b] = this[b], this[a]
 }
 
-func (s ByHeuristic) Less(a, b int) bool {
-	return s[a].heuristic < s[b].heuristic
+func (this ByScore) Less(a, b int) bool {
+	return this[a].score < this[b].score
+}
+
+func (this *Move) Score() int {
+	return this.score
+}
+
+func (this *Move) Position() Position {
+	return this.pos
 }
 
 type AIBoard struct {
@@ -96,6 +103,13 @@ func (board *AIBoard) GetSearchSpace() []Position {
 	}
 
 	return moves
+}
+
+func (this *AIBoard) CreateMove(pos Position) Move {
+	capt := this.DoMove(pos)
+	score := this.Evaluate(pos)
+	this.UndoMove(pos, &capt)
+	return Move{pos, capt, score}
 }
 
 func (board *AIBoard) DoMove(pos Position) []Position {

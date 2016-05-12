@@ -18,9 +18,6 @@ func NewTextDrawer() *TextDrawer {
 	return &TextDrawer{font, sdl.Color{0, 0, 0, 255}}
 }
 
-// strconv.Itoa(values[i][j][0])
-// sdl.Rect{int32(i) * 40 + 40 - surface.W / 2, int32(j) * 40 + 40 - surface.H / 2, surface.W, surface.H}
-
 func (this *TextDrawer) Draw(renderer *sdl.Renderer, test string, w, h int) {
 	surface, err := this.font.RenderUTF8_Blended(test, this.color)
 	if err != nil { panic(err) }

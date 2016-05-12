@@ -62,30 +62,31 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	beta := math.MaxInt32
 
 	// TODO: Parallelize
-	for _, move := range(moves) {
+	for _, pos := range(moves) {
 		b := AIBoard{*values, *freeThree, *capture, player}
-		captures := b.DoMove(move)
-		boardData[move.y][move.x][6] = 1
-		score := evaluateBoard(b.Board(), move.x, move.y, player, &boardData, b.CapturesNb())
-		boardData[move.y][move.x][5] = score
+		move := b.CreateMove(pos)
+		b.DoMove(move)
+		boardData[move.pos.y][move.pos.x][6] = 1
+		score := evaluateBoard(b.Board(), move.pos.x, move.pos.y, player, &boardData, b.CapturesNb())
+		boardData[move.pos.y][move.pos.x][5] = score
 		if score >= 2e9 {
-			b.UndoMove(move, &captures)
-			return move.x, move.y, boardData
+			b.UndoMove(move)
+			return move.pos.x, move.pos.y, boardData
 		}
 
-		b.UpdateFreeThrees(move, captures)
-		s := -searchdeeper(&b, move, depth - 1, -beta, -alpha)
-		boardData[move.y][move.x][5] = s
-		b.UndoMove(move, &captures)
-		b.UpdateFreeThrees(move, captures)
+		b.UpdateFreeThrees(move.pos, move.captures)
+		s := -searchdeeper(&b, move.pos, depth - 1, -beta, -alpha)
+		boardData[move.pos.y][move.pos.x][5] = s
+		b.UndoMove(move)
+		b.UpdateFreeThrees(move.pos, move.captures)
 
 		if s >= beta {
-			return move.x, move.y, boardData
+			return move.pos.x, move.pos.y, boardData
 		}
 
 		if s > bestscore {
 			bestscore = s
-			ax, ay = move.x, move.y
+			ax, ay = move.pos.x, move.pos.y
 			if s > alpha {
 				alpha = s
 			}
@@ -105,6 +106,7 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()
+
 	if depth == 0 {
 		return b.Evaluate(move)
 	}
@@ -121,9 +123,9 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 		if move.Score() >= 2e9 {
 			return move.Score()
 		}
-		captures := b.DoMove(move.Position()) // That sucks : Already have captures !
+		b.DoMove(move)
 		s := -searchdeeper(b, move.Position(), depth - 1, -beta, -alpha)
-		b.UndoMove(move.Position(), &captures)
+		b.UndoMove(move)
 
 		if s >= beta {
 			return s

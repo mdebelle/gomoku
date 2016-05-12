@@ -106,22 +106,26 @@ func (board *AIBoard) GetSearchSpace() []Position {
 }
 
 func (this *AIBoard) CreateMove(pos Position) Move {
-	capt := this.DoMove(pos)
-	score := this.Evaluate(pos)
-	this.UndoMove(pos, &capt)
-	return Move{pos, capt, score}
-}
-
-func (board *AIBoard) DoMove(pos Position) []Position {
 	captures := make([]Position, 0, 16)
-	doMove(&board.board, pos.x, pos.y, board.player, &captures)
-	board.capturesNb[board.player + 1] += len(captures)
-	return captures
+	getCaptures(&this.board, pos.x, pos.y, this.player, &captures)
+	move := Move{pos, captures, 0}
+	this.DoMove(move)
+	score := this.Evaluate(pos)
+	this.UndoMove(move)
+	move.score = score
+	return move
 }
 
-func (board *AIBoard) UndoMove(pos Position, captures *[]Position) {
-	undoMove(&board.board, pos.x, pos.y, board.player, captures)
-	board.capturesNb[board.player + 1] -= len(*captures)
+func (this *AIBoard) DoMove(move Move) {
+	this.board[move.pos.y][move.pos.x] = this.player
+	doCaptures(&this.board, &move.captures)
+	this.capturesNb[this.player + 1] += len(move.captures)
+}
+
+func (this *AIBoard) UndoMove(move Move) {
+	this.board[move.pos.y][move.pos.x] = empty
+	undoCaptures(&this.board, &move.captures, this.player)
+	this.capturesNb[this.player + 1] -= len(move.captures)
 }
 
 func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {

@@ -180,13 +180,22 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 				_ = renderer.SetDrawColor(46, 204, 113, 255)
 				_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 5), int32((j+1)*40 - 5), 10, 10})
 			}
-			if values[j][i][5] != 0 {
+
+			if values[j][i][6] != 0 {
 				if (values[j][i][5] > 2e9) {
 					textDrawer.Draw(renderer, "∞", (i + 1) * 40, (j + 1) * 40)
 				} else if (values[j][i][5] < -2e9) {
 					textDrawer.Draw(renderer, "-∞", (i + 1) * 40, (j + 1) * 40)
 				} else {
 					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][5]), (i + 1) * 40, (j + 1) * 40)
+				}
+				
+				if (values[j][i][7] > 2e9) {
+					textDrawer.Draw(renderer, "∞", (i + 1) * 40 + 10, (j + 1) * 40 + 10)
+				} else if (values[j][i][7] < -2e9) {
+					textDrawer.Draw(renderer, "-∞", (i + 1) * 40 + 10, (j + 1) * 40 + 10)
+				} else {
+					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][7]), (i + 1) * 40 + 10, (j + 1) * 40 + 10)
 				}
 			}
 		}

@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 	"math"
+	"sort"
 )
 
 type Move struct {
@@ -105,6 +106,16 @@ func (board *AIBoard) GetSearchSpace() []Position {
 	return moves
 }
 
+func (this *AIBoard) GetNextMoves() []Move {
+	positions := this.GetSearchSpace()
+	moves := make([]Move, 0, len(positions))
+	for _, pos := range(positions) {
+		moves = append(moves, this.CreateMove(pos))
+	}
+	sort.Sort(sort.Reverse(ByScore(moves)))
+	return moves
+}
+
 func (this *AIBoard) CreateMove(pos Position) Move {
 	captures := make([]Position, 0, 16)
 	getCaptures(&this.board, pos.x, pos.y, this.player, &captures)
@@ -130,6 +141,7 @@ func (this *AIBoard) UndoMove(move Move) {
 
 func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 	// TODO: Two functions -> update from move and update from move cancelation
+	// TODO: And store changes. In fact, find a new method for free threes calculation / examination
 	if debug { defer timeFunc(time.Now(), "updateFreeThree") }
 
 	if (board.board[pos.y][pos.x] != empty) {
@@ -149,21 +161,19 @@ func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 }
 
 func (board *AIBoard) Evaluate(pos Position) int {
-	// C'est de la grosse merde !
-	// -v2
 
 	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 
 	var v1, v2 int
 
 	v1 = board.checkAlign(pos, board.player)
-	if v1 >= 4 {
+	if v1 >= 4 || board.capturesNb[board.player + 1] >= 10 {
 		return math.MaxInt32
 	}
 
 	v2 = board.checkAlign(pos, -board.player)
 
-	return v1 + v2 * 2 + board.capturesNb[board.player + 1] - board.capturesNb[-board.player + 1]
+	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 4 - board.capturesNb[-board.player + 1] * 4
 }
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {

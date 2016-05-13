@@ -45,8 +45,9 @@ type FreeThreesAxis [2][19][19]int
 // copy[4] forbiden player
 // korpy[5] score
 // porky[6] isTested?
+// plwoer[7] base Score
 // TODO: Make it an object (or not..)
-type BoardData [19][19][7]int
+type BoardData [19][19][8]int
 
 const (
 	winTitle string = "Go-Gomoku"

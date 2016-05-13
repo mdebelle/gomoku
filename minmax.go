@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 	"math"
-	"sort"
 )
 
 type Position struct {
@@ -62,6 +61,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	beta := math.MaxInt32
 
 	// TODO: Parallelize
+
 	for _, pos := range(moves) {
 		b := AIBoard{*values, *freeThree, *capture, player}
 		move := b.CreateMove(pos)
@@ -69,11 +69,11 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		boardData[move.pos.y][move.pos.x][6] = 1
 		score := evaluateBoard(b.Board(), move.pos.x, move.pos.y, player, &boardData, b.CapturesNb())
 		boardData[move.pos.y][move.pos.x][5] = score
+		boardData[move.pos.y][move.pos.x][7] = score
 		if score >= 2e9 {
 			b.UndoMove(move)
 			return move.pos.x, move.pos.y, boardData
 		}
-
 		b.UpdateFreeThrees(move.pos, move.captures)
 		s := -searchdeeper(&b, move.pos, depth - 1, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
@@ -104,20 +104,15 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 	nodesSearched++
 	bestscore := math.MinInt32
 
-	b.SwitchPlayer()
-	defer b.SwitchPlayer()
-
 	if depth == 0 {
 		return b.Evaluate(move)
 	}
 
-	positions := b.GetSearchSpace()
-	moves := make([]Move, 0, len(positions))
-	for _, pos := range(positions) {
-		moves = append(moves, b.CreateMove(pos))
-	}
+	// Why not ?
+	b.SwitchPlayer()
+	defer b.SwitchPlayer()
 
-	sort.Sort(sort.Reverse(ByScore(moves)))
+	moves := b.GetNextMoves()
 
 	for _, move := range(moves) {
 		if move.Score() >= 2e9 {
@@ -219,7 +214,7 @@ func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3
 
 	v1 = checkAlign(values, x, y, player)
 	copy[y][x][0] = v1
-	if v1 >= 4 {
+	if v1 >= 4 || capture[player + 1] >= 10 {
 		return math.MaxInt32
 	}
 	v2 = checkAlign(values, x, y, -player)

@@ -466,7 +466,7 @@ func run() int {
 				victory.Todo = false
 			} else {
 				var x, y int
-				x, y, better = search(&values, &freeThrees, player, px, py, 4, &capture)
+				x, y, better = search(&values, &freeThrees, player, px, py, 5, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 				if values[y][x] == 0 {

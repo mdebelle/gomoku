@@ -51,10 +51,13 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	nodesSearched = 0
 	startTime := time.Now()
 
+	defer fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")
+
 	var	ax, ay int
 	var boardData BoardData
 
 	moves := getSearchSpace(values, freeThree, player)
+	ax, ay = moves[0].x, moves[0].y
 
 	bestscore := math.MinInt32
 	alpha := math.MinInt32
@@ -63,7 +66,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	// TODO: Parallelize
 
 	for _, pos := range(moves) {
-		b := AIBoard{*values, *freeThree, *capture, player}
+		b := AIBoard{*values, *freeThree, *capture, player, depth}
 		move := b.CreateMove(pos)
 		b.DoMove(move)
 		boardData[move.pos.y][move.pos.x][6] = 1
@@ -93,9 +96,6 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		}
 	}
 
-	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")
-	fmt.Println("BEST : ", bestscore)
-
 	return ax, ay, boardData
 }
 
@@ -104,11 +104,11 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 	nodesSearched++
 	bestscore := math.MinInt32
 
+	b.depth--
 	if depth == 0 {
-		return b.Evaluate(move)
+		return -b.Evaluate(move)
 	}
 
-	// Why not ?
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()
 
@@ -203,10 +203,7 @@ func checkCapt(values *Board, x, y, player int) int {
 			capt(0, -1) + capt(0, 1) + capt(-1, 0) + capt(1, 0)
 }
 
-// TODO: Deep search doesnt need a BoardData
 func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
-	// C'est de la grosse merde !
-	// -v2
 
 	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 

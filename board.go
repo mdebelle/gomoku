@@ -40,6 +40,7 @@ type AIBoard struct {
 	freeThrees	[2]Board
 	capturesNb	[3]int
 	player		int
+	depth		int
 }
 
 func (board *AIBoard) Board() *Board {
@@ -168,12 +169,12 @@ func (board *AIBoard) Evaluate(pos Position) int {
 
 	v1 = board.checkAlign(pos, board.player)
 	if v1 >= 4 || board.capturesNb[board.player + 1] >= 10 {
-		return math.MaxInt32
+		return math.MaxInt32 + board.depth
 	}
 
 	v2 = board.checkAlign(pos, -board.player)
 
-	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 4 - board.capturesNb[-board.player + 1] * 4
+	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
 }
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {

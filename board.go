@@ -36,7 +36,7 @@ func (this *Move) Position() Position {
 
 type AIBoard struct {
 	board		Board
-	// TODO: Split arrays into named members
+	//alignments	[2][4]Board
 	freeThrees	[2]Board
 	capturesNb	[3]int
 	player		int
@@ -94,7 +94,7 @@ func (board *AIBoard) GetSearchSpace() []Position {
 	for y := 0; y < 19; y++ {
 		for x := 0; x < 19; x++ {
 			if board.board[y][x] != empty {
-				for i := 0; i < 2; i++ {
+				for i := 1; i < 2; i++ {
 					checkAxis(x, y, i, 0)
 					checkAxis(x, y, 0, i)
 					checkAxis(x, y, i, i)

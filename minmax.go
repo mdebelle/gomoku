@@ -12,71 +12,30 @@ type Position struct {
 
 var nodesSearched = 0
 
-func getSearchSpace(board *Board, freeThrees *[2]Board, player int) []Position {
-
-	if debug { defer timeFunc(time.Now(), "getSearchSpace") }
-
-	moves := make([]Position, 0, 10)
-	alreadyChecked := [19][19]bool {}
-
-	checkAxis := func(x, y, incx, incy int) {
-		if isValidMove(board, freeThrees, x + incx, y + incy, player) && !alreadyChecked[y + incy][x + incx] {
-			alreadyChecked[y + incy][x + incx] = true
-			moves = append(moves, Position{x + incx, y + incy})
-		}
-		if isValidMove(board, freeThrees, x - incx, y - incy, player) && !alreadyChecked[y - incy][x - incx] {
-			alreadyChecked[y - incy][x - incx] = true
-			moves = append(moves, Position{x - incx, y - incy})
-		}
-	}
-
-	for y := 0; y < 19; y++ {
-		for x := 0; x < 19; x++ {
-			if board[y][x] != empty {
-				for i := 0; i < 2; i++ {
-					checkAxis(x, y, i, 0)
-					checkAxis(x, y, 0, i)
-					checkAxis(x, y, i, i)
-					checkAxis(x, y, i, -i)
-				}
-			}
-		}
-	}
-
-	return moves
-}
-
 func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
 
 	nodesSearched = 0
 	startTime := time.Now()
 
-	defer fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")
-
 	var	ax, ay int
 	var boardData BoardData
 
-	moves := getSearchSpace(values, freeThree, player)
-	ax, ay = moves[0].x, moves[0].y
+	b := AIBoard{*values, *freeThree, *capture, player, depth}
+	moves := b.GetNextMoves()
+
+	ax, ay = moves[0].pos.x, moves[0].pos.y
 
 	bestscore := math.MinInt32
 	alpha := math.MinInt32
 	beta := math.MaxInt32
 
-	// TODO: Parallelize
-
-	for _, pos := range(moves) {
-		b := AIBoard{*values, *freeThree, *capture, player, depth}
-		move := b.CreateMove(pos)
-		b.DoMove(move)
+	for _, move := range(moves) {
 		boardData[move.pos.y][move.pos.x][6] = 1
-		score := evaluateBoard(b.Board(), move.pos.x, move.pos.y, player, &boardData, b.CapturesNb())
-		boardData[move.pos.y][move.pos.x][5] = score
-		boardData[move.pos.y][move.pos.x][7] = score
-		if score >= 2e9 {
-			b.UndoMove(move)
+		boardData[move.pos.y][move.pos.x][7] = move.score
+		if move.score >= 2e9 {
 			return move.pos.x, move.pos.y, boardData
 		}
+		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
 		s := -searchdeeper(&b, move.pos, depth - 1, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
@@ -96,6 +55,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		}
 	}
 
+	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")
 	return ax, ay, boardData
 }
 
@@ -134,23 +94,6 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 		}
 	}
 	return bestscore
-}
-
-func doMove(board *Board, x, y, player int, captures *[]Position) {
-
-	if debug { defer timeFunc(time.Now(), "doMove") }
-
-	board[y][x] = player
-	getCaptures(board, x, y, player, captures)
-	doCaptures(board, captures)
-}
-
-func undoMove(board *Board, x, y, player int, captures *[]Position) {
-
-	if debug { defer timeFunc(time.Now(), "undoMove") }
-
-	board[y][x] = empty
-	undoCaptures(board, captures, player)
 }
 
 func checkAlign(values *Board, x, y, player int) int {
@@ -201,21 +144,4 @@ func checkCapt(values *Board, x, y, player int) int {
 	}
 	return  capt(-1, -1) + capt(1, 1) + capt(1, -1) + capt(-1, 1) +
 			capt(0, -1) + capt(0, 1) + capt(-1, 0) + capt(1, 0)
-}
-
-func evaluateBoard(values *Board, x, y, player int, copy *BoardData, capture *[3]int) int {
-
-	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
-
-	var v1, v2 int
-
-	v1 = checkAlign(values, x, y, player)
-	copy[y][x][0] = v1
-	if v1 >= 4 || capture[player + 1] >= 10 {
-		return math.MaxInt32
-	}
-	v2 = checkAlign(values, x, y, -player)
-	copy[y][x][1] = v2
-
-	return v1 + v2 * 2 + capture[player + 1] - capture[-player + 1]
 }

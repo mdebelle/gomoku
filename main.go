@@ -318,14 +318,6 @@ func init() {
     runtime.LockOSThread()
 }
 
-func evaluateAllBoard(player int, value *Board, better *BoardData, capture *[3]int) {
-	for y := 0; y < 19; y++ {
-		for x := 0; x < 19; x++ {
-			evaluateBoard(value, x, y, player, better, capture)
-		}
-	}
-}
-
 func run() int {
 	var event sdl.Event
 	var running bool
@@ -403,7 +395,6 @@ func run() int {
 					} else if values[py][px] == 0 {
 						player = checkRules(&values, &freeThrees, &capture, px, py, player)
 					}
-					evaluateAllBoard(player, &values, &better, &capture)
 				}
 			case *sdl.KeyUpEvent:
 				if player_mode == 0 && t.Type == 769 && (t.Keysym.Sym == '1' || t.Keysym.Sym == 1073741913) {

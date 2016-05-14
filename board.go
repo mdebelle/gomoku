@@ -4,6 +4,7 @@ import (
 	"time"
 	"math"
 	"sort"
+//	"fmt"
 )
 
 type Move struct {
@@ -36,8 +37,8 @@ func (this *Move) Position() Position {
 
 type AIBoard struct {
 	board		Board
-	//alignments	[2][4]Board
 	freeThrees	[2]Board
+	alignments	[2][19][19][4]int
 	capturesNb	[3]int
 	player		int
 	depth		int
@@ -132,12 +133,28 @@ func (this *AIBoard) DoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = this.player
 	doCaptures(&this.board, &move.captures)
 	this.capturesNb[this.player + 1] += len(move.captures)
+
+	/*
+	this.UpdateAlignmentsAround(move.pos)
+	for _, capt := range(move.captures) {
+		this.UpdateAlignmentsAround(capt)
+	}
+	//*/
+	//this.InitAlignments()
 }
 
 func (this *AIBoard) UndoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = empty
 	undoCaptures(&this.board, &move.captures, this.player)
 	this.capturesNb[this.player + 1] -= len(move.captures)
+
+	/*
+	this.UpdateAlignmentsAround(move.pos)
+	for _, capt := range(move.captures) {
+		this.UpdateAlignmentsAround(capt)
+	}
+	//*/
+	//this.InitAlignments()
 }
 
 func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
@@ -161,6 +178,117 @@ func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 	}
 }
 
+func NewAIBoard(values *Board, freeThree *[2]Board, capture *[3]int, player, depth int) AIBoard {
+	board := AIBoard{*values, *freeThree, [2][19][19][4]int{}, *capture, player, depth}
+	board.InitAlignments()
+	return board
+}
+
+func (this *AIBoard) InitAlignments() {
+	for y := 0; y < 19; y++ {
+		for x := 0; x < 19; x++ {
+			this.UpdateAlignmentsOn(Position{x, y})
+		}
+	}
+	/*
+	fmt.Println("--------------------------------")
+	fmt.Println("--------------------------------")
+	for x := 0; x < 19; x++ {
+		fmt.Println(this.alignments[(this.player + 1) / 2][x])
+	}
+	fmt.Println("--------------------------------")
+	for x := 0; x < 19; x++ {
+		fmt.Println(this.alignments[(-this.player + 1) / 2][x])
+	}
+	fmt.Println("--------------------------------")
+	for y := 0; y < 19; y++ {
+		for x := 0; x < 19; x++ {
+			fmt.Printf("%d ", this.GetPositionAlignmentScore(Position{x, y}, -this.player))
+		}
+		fmt.Println()
+	}
+	//*/
+}
+
+func (this *AIBoard) UpdateAlignmentsOn(pos Position) {
+	ourAlignments := &this.alignments[(this.player + 1) / 2]
+	theirAlignments := &this.alignments[(-this.player + 1) / 2]
+
+	f := func (incx, incy, x, y, p int) int {
+		cnt := 0
+		x, y = x + incx, y + incy
+		for i := 0; i < 4; i++ {
+			if !isInBounds(x, y) || this.board[y][x] == -p {
+				return cnt
+			}
+			if this.board[y][x] == p {
+				cnt += 1
+			}
+			x += incx
+			y += incy
+		}
+		return cnt
+	}
+
+	updateAlign := func (axis, incx, incy, x, y int) {
+		if isInBounds(x, y) && this.board[y][x] == empty {
+			ourAlignments[y][x][axis] = f(incx, incy, x, y, this.player) + f(-incx, -incy, x, y, this.player)
+			theirAlignments[y][x][axis] = f(incx, incy, x, y, -this.player) + f(-incx, -incy, x, y, -this.player)
+		}
+	}
+
+	updateAlign(VerticalAxis, 0, 1, pos.x, pos.y)
+	updateAlign(HorizontalAxis, 1, 0, pos.x, pos.y)
+	updateAlign(LeftDiagAxis, 1, -1, pos.x, pos.y)
+	updateAlign(RightDiagAxis, 1, 1, pos.x, pos.y)
+}
+
+func (this *AIBoard) UpdateAlignmentsAround(pos Position) {
+	ourAlignments := &this.alignments[(this.player + 1) / 2]
+	theirAlignments := &this.alignments[(-this.player + 1) / 2]
+
+	f := func (incx, incy, x, y, p int) int {
+		cnt := 0
+		x, y = x + incx, y + incy
+		for i := 0; i < 4; i++ {
+			if !isInBounds(x, y) || this.board[y][x] == -p {
+				return cnt
+			}
+			if this.board[y][x] == p {
+				cnt += 1
+			}
+			x += incx
+			y += incy
+		}
+		return cnt
+	}
+
+	updateAlign := func (axis, incx, incy, x, y int) {
+		if isInBounds(x, y) && this.board[y][x] != empty {
+			ourAlignments[y][x][axis] = f(incx, incy, x, y, this.player) + f(-incx, -incy, x, y, this.player)
+			theirAlignments[y][x][axis] = f(incx, incy, x, y, -this.player) + f(-incx, -incy, x, y, -this.player)
+		}
+	}
+
+	for i := 1; i < 5; i++ {
+		updateAlign(VerticalAxis, 0, 1, pos.x, pos.y + i)
+		updateAlign(HorizontalAxis, 1, 0, pos.x + i, pos.y)
+		updateAlign(LeftDiagAxis, 1, -1, pos.x + i, pos.y - i)
+		updateAlign(RightDiagAxis, 1, 1, pos.x + i, pos.y + i)
+	}
+}
+
+func (this *AIBoard) GetPositionAlignmentScore(pos Position, player int) int {
+	max := 0
+	for i := 0; i < 4; i++ {
+		alignment := this.alignments[(player + 1) / 2][pos.y][pos.x][i]
+		if alignment > max {
+			max = alignment
+		}
+	}
+	return max
+}
+
 func (board *AIBoard) Evaluate(pos Position) int {
 
 	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
@@ -168,11 +296,13 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	var v1, v2 int
 
 	v1 = board.checkAlign(pos, board.player)
+//	v1 = board.GetPositionAlignmentScore(pos, board.player)
 	if v1 >= 4 || board.capturesNb[board.player + 1] >= 10 {
 		return math.MaxInt32 + board.depth
 	}
 
 	v2 = board.checkAlign(pos, -board.player)
+//	v2 = board.GetPositionAlignmentScore(pos, -board.player)
 
 	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
 }

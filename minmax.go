@@ -20,7 +20,7 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	var	ax, ay int
 	var boardData BoardData
 
-	b := AIBoard{*values, *freeThree, *capture, player, depth}
+	b := NewAIBoard(values, freeThree, capture, player, depth)
 	moves := b.GetNextMoves()
 
 	ax, ay = moves[0].pos.x, moves[0].pos.y
@@ -94,54 +94,4 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 		}
 	}
 	return bestscore
-}
-
-func checkAlign(values *Board, x, y, player int) int {
-	f := func (incx, incy, x, y, p int) int {
-		cnt := 0
-		x, y = x + incx, y + incy
-		for i := 0; i < 4; i++ {
-			if !isInBounds(x, y) || values[y][x] == -p{
-				return cnt
-			}
-			if values[y][x] == p {
-				cnt += 1
-			}
-			x += incx
-			y += incy
-		}
-		return cnt
-	}
-	max, t := 0, 0 
-	
-	max = f(-1, -1, x, y, player) + f(1, 1, x, y, player)
-	t = f(1, -1, x, y, player) + f(-1, 1, x, y, player)
-	if t > max {
-		max = t
-	}	
-	t = f(0, -1, x, y, player) + f(0, 1, x, y, player)
-	if t > max {
-		max = t
-	}
-	t = f(-1, 0, x, y, player) + f(1, 0, x, y, player)
-	if t > max {
-		return t
-	} 
-	return max
-}
-
-func checkCapt(values *Board, x, y, player int) int {
-	capt := func (incx, incy int) int {
-		if !isInBounds(x + 3 * incx, y + 3 * incy) {
-			return 0
-		}
-		if	values[y + incy][x + incx] == -player &&
-			values[y + 2 * incy][x + 2 * incx] == -player &&
-		 	values[y + 3 * incy][x + 3 * incx] == player {
-				return 2
-		}
-		return 0
-	}
-	return  capt(-1, -1) + capt(1, 1) + capt(1, -1) + capt(-1, 1) +
-			capt(0, -1) + capt(0, 1) + capt(-1, 0) + capt(1, 0)
 }

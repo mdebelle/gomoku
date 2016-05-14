@@ -20,11 +20,18 @@ const (
 	player_one = 1
 	player_two = -player_one
 	searchMaxTime = 500000000 * time.Nanosecond
-	searchMaxDepth = 20 
+	searchMaxDepth = 20
 )
 
 const (
-	VerticalAxis = 1 << iota
+	VerticalAxisMask = 1 << iota
+	HorizontalAxisMask
+	LeftDiagAxisMask	// haut droite
+	RightDiagAxisMask	// bas droite
+)
+
+const (
+	VerticalAxis = iota
 	HorizontalAxis
 	LeftDiagAxis	// haut droite
 	RightDiagAxis	// bas droite
@@ -191,20 +198,20 @@ func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 	}
 
 	if board[y][x] == empty {
-		checkAxis(x, y, 0, 1, VerticalAxis)
-		checkAxis(x, y, 1, 0, HorizontalAxis)
-		checkAxis(x, y, 1, -1, LeftDiagAxis)
-		checkAxis(x, y, 1, 1, RightDiagAxis)
+		checkAxis(x, y, 0, 1, VerticalAxisMask)
+		checkAxis(x, y, 1, 0, HorizontalAxisMask)
+		checkAxis(x, y, 1, -1, LeftDiagAxisMask)
+		checkAxis(x, y, 1, 1, RightDiagAxisMask)
 	}
 	for i := 1; i <= 4; i++ {
-		checkAxis(x, y + i, 0, 1, VerticalAxis)
-		checkAxis(x, y - i, 0, 1, VerticalAxis)
-		checkAxis(x + i, y, 1, 0, HorizontalAxis)
-		checkAxis(x - i, y, 1, 0, HorizontalAxis)
-		checkAxis(x + i, y - i, 1, -1, LeftDiagAxis)
-		checkAxis(x - i, y + i, 1, -1, LeftDiagAxis)
-		checkAxis(x + i, y + i, 1, 1, RightDiagAxis)
-		checkAxis(x - i, y - i, 1, 1, RightDiagAxis)
+		checkAxis(x, y + i, 0, 1, VerticalAxisMask)
+		checkAxis(x, y - i, 0, 1, VerticalAxisMask)
+		checkAxis(x + i, y, 1, 0, HorizontalAxisMask)
+		checkAxis(x - i, y, 1, 0, HorizontalAxisMask)
+		checkAxis(x + i, y - i, 1, -1, LeftDiagAxisMask)
+		checkAxis(x - i, y + i, 1, -1, LeftDiagAxisMask)
+		checkAxis(x + i, y + i, 1, 1, RightDiagAxisMask)
+		checkAxis(x - i, y - i, 1, 1, RightDiagAxisMask)
 	}
 }
 
@@ -368,6 +375,7 @@ func run() int {
 
 	var windowb *sdl.Window
 	var rendererb *sdl.Renderer
+
 
 	running = true
 	player = 1

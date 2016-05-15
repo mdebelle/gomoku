@@ -100,6 +100,7 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 		}
 	}
 
+	drawGrid(renderer)
 	for i := 0; i < 19; i++ {
 		for j := 0; j < 19; j++ {
 			if values[j][i] == player_one {

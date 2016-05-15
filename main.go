@@ -483,61 +483,74 @@ func init() {
 }
 
 func run() int {
-	var event sdl.Event
-	var running bool
-	var err error
-	var player int
-	victory.Todo = false
-	var capture [3]int
-	var values Board
-	var freeThrees [2]Board
-	var alignTable [2]Board
-	var better BoardData
+	var (
+		event			sdl.Event
+		running			bool
+		err				error
+		player_mode		int
+	)
 
-	var player_mode int
-	var debug		bool
-
+	var (
+		player, px, py	int
+		capture			[3]int
+		values			Board
+		freeThrees		[2]Board
+		alignTable		[2]Board
+		better			BoardData
+	)
+	
+	
+	// Log Module
 	f, err := os.OpenFile("testlogfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create file: %s\n", err)
 		return 1
 	}
 	defer f.Close()
-
 	log.SetOutput(f)
 	log.Printf("---NEW GAME---\n")
 
 	sdl.Init(sdl.INIT_EVERYTHING)
+	
+	// Drawing Module
 	if err := ttf.Init(); err != nil {
 		fmt.Println(err)
 		return 3
 	}
 	defer ttf.Quit()
-
 	textDrawer = NewTextDrawer()
 	defer textDrawer.Dispose()
 
-	window, err := sdl.CreateWindow(winTitle, 800, 0,
+	// Main Window
+	var (
+		window		*sdl.Window
+		renderer	*sdl.Renderer
+	)
+	window, err = sdl.CreateWindow(winTitle, 800, 0,
 		winWidth, winHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
 		return 1
 	}
 	defer window.Destroy()
-	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
 		return 2
 	}
 	defer renderer.Destroy()
 
-	var windowb *sdl.Window
-	var rendererb *sdl.Renderer
+	// Debug Window
+	var (
+		debug		bool
+		windowb		*sdl.Window
+		rendererb	*sdl.Renderer
+	)
 
-
-	running = true
 	player = 1
-	var px, py int
+	running = true
+	victory.Todo = false
+
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
@@ -545,7 +558,7 @@ func run() int {
 				running = false
 			case *sdl.MouseButtonEvent:
 				//fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n", t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
-				if  t.Type == 1025 && ((player_mode == 1 && player == player_one) || (player_mode == 2)) {
+				if  (player_mode == 1 && player == player_one) || (player_mode == 2) {
 					py = mousePositionToGrid(float64(t.Y))
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
@@ -559,21 +572,27 @@ func run() int {
 						}
 						fmt.Println(values)
 					} else if values[py][px] == 0 {
-						getScore(&alignTable, px, py, player)
+						a,b,c,d := getScore(&alignTable, px, py, player)
+						fmt.Printf("LR %d, TB %d, LTRB %d, RTLB %d\n", a, b, c, d)
 						updateAlign(&values, &alignTable, px, py, player)
 						player = checkRules(&values, &freeThrees, &capture, px, py, player)
 					}
 				}
 			case *sdl.KeyUpEvent:
-				if player_mode == 0 && t.Type == 769 && (t.Keysym.Sym == '1' || t.Keysym.Sym == 1073741913) {
-					player_mode = 1
-				} else if player_mode == 0 && t.Type == 769 && (t.Keysym.Sym == '2' || t.Keysym.Sym == 1073741914) {
-					player_mode = 2
-				}
-				if t.Type == 769 && (t.Keysym.Sym == 'q' || t.Keysym.Sym == 27) {
+				// Quit Event
+				if t.Keysym.Sym == 'q' || t.Keysym.Sym == 27 {
 					running = false
 				}
-				if player_mode > 0 && t.Type == 769 && t.Keysym.Sym == 'd' {
+
+				// Select Game Mode Event
+				if player_mode == 0 && (t.Keysym.Sym == '1' || t.Keysym.Sym == 1073741913) {
+					player_mode = 1
+				} else if player_mode == 0 && (t.Keysym.Sym == '2' || t.Keysym.Sym == 1073741914) {
+					player_mode = 2
+				}
+
+				// Toggle Debug Window Event
+				if player_mode > 0 && t.Keysym.Sym == 'd' {
 					if debug == false {
 						windowb, err = sdl.CreateWindow(winTitleDebug, 0, 0,
 							winWidth, winHeight, sdl.WINDOW_SHOWN)
@@ -588,22 +607,26 @@ func run() int {
 							return 2
 						}
 						defer rendererb.Destroy()
-
-						_= rendererb.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
+						rendererb.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
 						debug = true
 					} else {
 						rendererb.Destroy()
 						windowb.Destroy()
 						debug = false
+						log.Printf("---NEW GAME---\n")
 					}
 				}
-				if player == 0 && t.Type == 769 && t.Keysym.Sym == 'a' {
+
+				// Restart option after game over Event
+				if player == 0 && t.Keysym.Sym == 'a' {
+					var (
+						emptyvalues		Board
+						emptyfreeThrees	[2]Board
+						emptybetter		BoardData
+					)
 					capture = [3]int {0,0,0}
-					var emptyvalues Board
 					values = emptyvalues
-					var emptyfreeThrees [2]Board
 					freeThrees = emptyfreeThrees
-					var emptybetter BoardData
 					better =  emptybetter
 					player_mode = 0
 					if debug == true {
@@ -617,6 +640,7 @@ func run() int {
 			}
 		}
 
+		// IA
 		if player_mode == 1 && player == player_two {
 			if victory.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)
@@ -636,10 +660,10 @@ func run() int {
 			resetTimer()
 		}
 
+		// Rendering Window(s)
 		if player_mode > 0 {
 			_ = renderer.SetDrawColor(236, 240, 241, 0)
 			renderer.Clear()
-			drawGrid(renderer)
 			drawClic(renderer, &values, &capture, &freeThrees)
 			if player == 0 {
 				drawRestartPanel(renderer)
@@ -648,7 +672,6 @@ func run() int {
 			if debug == true {
 				_ = rendererb.SetDrawColor(236, 240, 241, 0)
 				rendererb.Clear()
-				drawGrid(rendererb)
 				drawClic(rendererb, &values, &capture, &freeThrees)
 				draweval(rendererb, &better)
 				rendererb.Present()

@@ -6,10 +6,6 @@ import (
 	"math"
 )
 
-type Position struct {
-	x, y int
-}
-
 var nodesSearched = 0
 
 func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {

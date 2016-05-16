@@ -4,12 +4,15 @@ import (
 	"time"
 	"math"
 	"sort"
-//	"fmt"
+	"fmt"
 )
+
+var _ = fmt.Println
 
 type Move struct {
 	pos			Position
 	captures	[]Position
+	aligns		[]AlignScore
 	score		int
 }
 
@@ -38,6 +41,7 @@ func (this *Move) Position() Position {
 type AIBoard struct {
 	board		Board
 	freeThrees	[2]Board
+	alignTable	[2]Board
 	alignments	[2][19][19][4]int
 	capturesNb	[3]int
 	player		int
@@ -121,10 +125,10 @@ func (this *AIBoard) GetNextMoves() []Move {
 func (this *AIBoard) CreateMove(pos Position) Move {
 	captures := make([]Position, 0, 16)
 	getCaptures(&this.board, pos.x, pos.y, this.player, &captures)
-	move := Move{pos, captures, 0}
-	this.DoMove(move)
+	move := Move{pos, captures, []AlignScore{}, 0}
+//	this.DoMove(move)
 	score := this.Evaluate(pos)
-	this.UndoMove(move)
+//	this.UndoMove(move)
 	move.score = score
 	return move
 }
@@ -133,6 +137,8 @@ func (this *AIBoard) DoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = this.player
 	doCaptures(&this.board, &move.captures)
 	this.capturesNb[this.player + 1] += len(move.captures)
+	move.aligns = updateAlign(&this.board, &this.alignTable, move.pos.x, move.pos.y, this.player)
+//	updateAlignAfterCapture(&this.board, &this.alignTable, move.captures, -this.player)
 
 	/*
 	this.UpdateAlignmentsAround(move.pos)
@@ -147,6 +153,10 @@ func (this *AIBoard) UndoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = empty
 	undoCaptures(&this.board, &move.captures, this.player)
 	this.capturesNb[this.player + 1] -= len(move.captures)
+	updateAlignAfterCapture(&this.board, &this.alignTable, []Position{move.pos}, this.player)
+	for _, pos := range move.captures {
+		updateAlign(&this.board, &this.alignTable, pos.x, pos.y, -this.player)
+	}
 
 	/*
 	this.UpdateAlignmentsAround(move.pos)
@@ -178,8 +188,8 @@ func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 	}
 }
 
-func NewAIBoard(values *Board, freeThree *[2]Board, capture *[3]int, player, depth int) AIBoard {
-	board := AIBoard{*values, *freeThree, [2][19][19][4]int{}, *capture, player, depth}
+func NewAIBoard(values *Board, freeThree, alignTable *[2]Board, capture *[3]int, player, depth int) AIBoard {
+	board := AIBoard{*values, *freeThree, *alignTable, [2][19][19][4]int{}, *capture, player, depth}
 	board.InitAlignments()
 	return board
 }
@@ -293,18 +303,39 @@ func (board *AIBoard) Evaluate(pos Position) int {
 
 	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 
-	var v1, v2 int
+//	var v1, v2 int
 
-	v1 = board.checkAlign(pos, board.player)
-//	v1 = board.GetPositionAlignmentScore(pos, board.player)
-	if v1 >= 4 || board.capturesNb[board.player + 1] >= 10 {
+	a1, a2, a3, a4 := getScore(&board.alignTable, pos.x, pos.y, board.player)
+	v1 := a1 + a2 + a3 + a4
+
+	//v1 = board.checkAlign(pos, board.player)
+	//v1 = board.GetPositionAlignmentScore(pos, board.player)
+
+	// TODO: Proper victory check
+	/*
+	if max == 15 || max > 22 || board.capturesNb[board.player + 1] >= 10 {
+		return math.MaxInt32 + board.depth
+	}
+*/
+
+	b1, b2, b3, b4 := getScore(&board.alignTable, pos.x, pos.y, -board.player)
+	v2 := b1 + b2 + b3 + b4
+
+	max := 0
+	for _, p := range []int{b1, b2, b3, b4, a1, a2, a3, a4} {
+		if p > max {
+			max = p
+		}
+	}
+
+	if max == 15 || max == 22 || max == 24 || board.capturesNb[board.player + 1] >= 10 {
 		return math.MaxInt32 + board.depth
 	}
 
-	v2 = board.checkAlign(pos, -board.player)
-//	v2 = board.GetPositionAlignmentScore(pos, -board.player)
+	//v2 = board.checkAlign(pos, -board.player)
+	//v2 = board.GetPositionAlignmentScore(pos, -board.player)
 
-	return v1 + v2 * 2 + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
+	return v1 + v2 + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
 }
 
 func (board *AIBoard) checkCaptures(pos Position, player int) int {

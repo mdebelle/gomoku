@@ -8,7 +8,7 @@ import (
 
 var nodesSearched = 0
 
-func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
+func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
 
 	nodesSearched = 0
 	startTime := time.Now()
@@ -16,7 +16,8 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 	var	ax, ay int
 	var boardData BoardData
 
-	b := NewAIBoard(values, freeThree, capture, player, depth)
+	b := NewAIBoard(values, freeThree, alignTable, capture, player, depth)
+
 	moves := b.GetNextMoves()
 
 	ax, ay = moves[0].pos.x, moves[0].pos.y
@@ -31,6 +32,18 @@ func search(values *Board, freeThree *[2]Board, player, x, y, depth int, capture
 		if move.score >= 2e9 {
 			return move.pos.x, move.pos.y, boardData
 		}
+
+		fmt.Println("-----------BEFORE------------")
+		for y := 0; y < 19; y++ {
+			for x := 0; x < 19; x++ {
+				a, e, c, d := getScore(&b.alignTable, x, y, player)
+				fmt.Printf("[%v ", a + e + c + d)
+				a, e, c, d = getScore(&b.alignTable, x, y, -player)
+				fmt.Printf("%v]", a + e + c + d)
+			}
+			fmt.Println()
+		}
+
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
 		s := -searchdeeper(&b, move.pos, depth - 1, -beta, -alpha)

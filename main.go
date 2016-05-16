@@ -1,3 +1,15 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   main.go                                            :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
+//   Updated: 2016/05/16 21:47:41 by tmielcza         ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
+
 package main
 
 import (
@@ -44,6 +56,12 @@ type Position struct {
 type mustdo struct {
 	Todo	bool
 	X, Y    int
+}
+
+type AlignScore struct {
+	score_player_one	int
+	score_player_two	int
+	x, y				int
 }
 
 type Board [19][19]int
@@ -317,7 +335,7 @@ func getScore(alignTable *[2]Board, x, y, player int) (int, int, int, int) {
 	return axeLeftRight, axeTopBottom, axeLeftTopRightBottom, axeRightTopLeftBottom
 }
 
-func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position) {
+func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position, hey int) {
 
 	clearOponentSituation := func (player, py, px, axe, start int) {
 		for j := start; j < 5; j++ {
@@ -325,19 +343,31 @@ func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position)
 		}
 	}
 
-	resetAxeScore := func(player, x, y, incx, incy, axe int) {
+	resetAxeScore := func(x, y, incx, incy, axe, c int) {
 		var state bool
-		for i := 1; i < 5; i++ {
-			if isInBounds(x+(i*incx), y+(i*incy)) {
-				if !state && board[y+(i*incy)][x+(i*incx)] == 0 {
-					alignTable[(player+1)/2][y+(i*incy)][x+(i*incx)] |= (1 << uint(axe-i))
-					clearOponentSituation(player, y+(i*incy), x+(i*incx), axe, i)
-				} else if board[y+(i*incy)][x+(i*incx)] == -player {
-					state = true
+
+		if !isInBounds(x,y) { return }
+
+		player := board[y][x]
+
+		if player != 0 {
+			for i := 1; i < 5; i++ {
+				if isInBounds(x+(i*incx), y+(i*incy)) {
+					if !state && board[y+(i*incy)][x+(i*incx)] == 0 {
+						alignTable[(player+1)/2][y+(i*incy)][x+(i*incx)] |= (1 << uint(axe-i))
+						clearOponentSituation(player, y+(i*incy), x+(i*incx), axe, i)
+					} else if board[y+(i*incy)][x+(i*incx)] == -player {
+						state = true
+					}
 				}
 			}
+		} else {
+			if axe % 8 == 0 { 
+				alignTable[(hey+1)/2][y][x] &= ^(1 << uint(axe-4-c))
+			} else {
+				alignTable[(hey+1)/2][y][x] &= ^(1 << uint(axe+4-c))
+			}
 		}
-
 	}
 
 	const (
@@ -358,42 +388,22 @@ func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position)
 
 		for i := 1; i < 5; i++ {
 			// LeftRight
-			if isInBounds(p.x-i,p.y) && board[p.y][p.x-i] != 0 {
-				resetAxeScore(board[p.y][p.x-i], p.x-i, p.y, 1, 0, axeRight)
-			}
-			if isInBounds(p.x+i,p.y) && board[p.y][p.x+i] != 0 {
-				resetAxeScore(board[p.y][p.x+i], p.x+i, p.y, -1, 0, axeLeft)
-			}
-			// TopBottom
-			if isInBounds(p.x,p.y-i) && board[p.y-i][p.x] != 0 {
-				resetAxeScore(board[p.y][p.x-i], p.x, p.y-i, 0, 1, axeBottom)
-			}
-			if isInBounds(p.x,p.y+i) && board[p.y+i][p.x] != 0 {
-				resetAxeScore(board[p.y][p.x+i], p.x, p.y+i, 0, -1, axeTop)
-			}
-			// LeftTopRightBottom
-			if isInBounds(p.x-i,p.y-i) && board[p.y-i][p.x-i] != 0 {
-				resetAxeScore(board[p.y-i][p.x-i], p.x-i, p.y-i, 1, 1, axeRightBottom)
-			}
-			if isInBounds(p.x+i,p.y+i) && board[p.y+i][p.x+i] != 0 {
-				resetAxeScore(board[p.y+i][p.x+i], p.x+i, p.y+i, -1, -1, axeLeftTop)
-			}
-			// RightTopLeftBottom
-			if isInBounds(p.x+i,p.y-i) && board[p.y-i][p.x+i] != 0 {
-				resetAxeScore(board[p.y-i][p.x+i], p.x+i, p.y-i, -1, 1, axeRightTop)
-			}
-			if isInBounds(p.x-i,p.y+i) && board[p.y+i][p.x-i] != 0 {
-				resetAxeScore(board[p.y+i][p.x-i], p.x-i, p.y+i, 1, -1, axeLeftBottom)
-			}
-
+			resetAxeScore(p.x-i, p.y, 1, 0, axeRight, i)
+			resetAxeScore(p.x+i, p.y, -1, 0, axeLeft, i)
+			resetAxeScore(p.x, p.y-i, 0, 1, axeBottom, i)
+			resetAxeScore(p.x, p.y+i, 0, -1, axeTop, i)
+			resetAxeScore(p.x-i, p.y-i, 1, 1, axeRightBottom, i)
+			resetAxeScore(p.x+i, p.y+i, -1, -1, axeLeftTop, i)
+			resetAxeScore(p.x+i, p.y-i, -1, 1, axeRightTop, i)
+			resetAxeScore(p.x-i, p.y+i, 1, -1, axeLeftBottom, i)
 		}
-
 	}
-
 }
 
-func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) {
+func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) []AlignScore {
 
+	var lst []AlignScore
+	
 	clearOponentSituation := func (player, py, px, axe, start int) {
 		for j := start; j < 5; j++ {
 			alignTable[(-player+1)/2][py][px] &= ^(1 << uint(axe-j))
@@ -403,6 +413,7 @@ func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) {
 	updateDistanceScore := func (player, px, py, axe, i int, state bool) bool {
 		if isInBounds(px, py) {
 			if !state && board[py][px] == 0 {
+				lst = append(lst, AlignScore{alignTable[(player_one+1)/2][py][px], alignTable[(player_two+1)/2][py][px], px, py})
 				alignTable[(player+1)/2][py][px] |= (1 << uint(axe-i))
 				clearOponentSituation(player, py, px, axe, i)
 			} else if board[py][px] == -player {
@@ -442,14 +453,15 @@ func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) {
 		rt = updateDistanceScore(player, x+i, y-i, axeRightTop, i, rt)
 		lb = updateDistanceScore(player, x-i, y+i, axeLeftBottom, i, lb)
 	}
-
+	return lst
 }
 
-func checkRules(values *Board, freeThrees *[2]Board, capture *[3]int, x, y, player int) int {
+func checkRules(values *Board, freeThrees, alignTable *[2]Board, capture *[3]int, x, y, player int) int {
 	if doesDoubleFreeThree(freeThrees, x, y, player) {
 		fmt.Printf("Nope\n")
 		return player
 	}
+	updateAlign(values, alignTable, x, y, player)
 	values[y][x] = player
 	victory := checkVictory(values, player, y, x)
 	if victory == true {
@@ -565,7 +577,7 @@ func run() int {
 					log.Printf("p1 -> X |%3d| Y|%3d|\n", px, py)
 					if victory.Todo == true {
 						if px == victory.X && py == victory.Y {
-							player = checkRules(&values, &freeThrees, &capture, px, py, player)
+							player = checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
 							victory.Todo = false
 						} else {
 							fmt.Printf("you must play in [%d][%d]\n", victory.X, victory.Y)
@@ -574,8 +586,7 @@ func run() int {
 					} else if values[py][px] == 0 {
 						a,b,c,d := getScore(&alignTable, px, py, player)
 						fmt.Printf("LR %d, TB %d, LTRB %d, RTLB %d\n", a, b, c, d)
-						updateAlign(&values, &alignTable, px, py, player)
-						player = checkRules(&values, &freeThrees, &capture, px, py, player)
+						player = checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
 					}
 				}
 			case *sdl.KeyUpEvent:
@@ -645,15 +656,15 @@ func run() int {
 			if victory.Todo == true {
 				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)
 				log.Printf("IA -> X |%3d| Y|%3d|\n", victory.X, victory.Y)
-				player = checkRules(&values, &freeThrees, &capture, victory.X, victory.Y, player)
+				player = checkRules(&values, &freeThrees, &alignTable, &capture, victory.X, victory.Y, player)
 				victory.Todo = false
 			} else {
 				var x, y int
-				x, y, better = search(&values, &freeThrees, player, px, py, 5, &capture)
+				x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture)
 				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 				log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 				if values[y][x] == 0 {
-					player = checkRules(&values, &freeThrees, &capture, x, y, player)
+					player = checkRules(&values, &freeThrees, &alignTable, &capture, x, y, player)
 				}
 			}
 			displayAverages()

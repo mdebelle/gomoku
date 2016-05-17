@@ -137,8 +137,8 @@ func (this *AIBoard) DoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = this.player
 	doCaptures(&this.board, &move.captures)
 	this.capturesNb[this.player + 1] += len(move.captures)
-	move.aligns = updateAlign(&this.board, &this.alignTable, move.pos.x, move.pos.y, this.player)
-//	updateAlignAfterCapture(&this.board, &this.alignTable, move.captures, -this.player)
+	updateAlign(&this.board, &this.alignTable, move.pos.x, move.pos.y, this.player)
+	updateAlignAfterCapture(&this.board, &this.alignTable, move.captures, -this.player)
 
 	/*
 	this.UpdateAlignmentsAround(move.pos)

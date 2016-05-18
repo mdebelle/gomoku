@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/17 21:07:27 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/18 18:29:00 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -92,6 +92,8 @@ const (
 	winningAlignment
 )
 
+type Unit struct {}
+
 var victory mustdo
 
 var textDrawer *TextDrawer
@@ -109,30 +111,28 @@ func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
 func checkVictory2(board *Board, x, y, player int) (AlignmentType, []Position) {
 	var captures []Position = nil
 
-	checkAxis := func (incx, incy int) AlignmentType {
+	checkAxis := func (incx, incy int) (AlignmentType, []Position) {
 		countPawnsOnDir := func (incx, incy int) int {
 			x, y := x + incx, y + incy
-			for i := 0; i < 4; i++ {
-				if !isInBounds(x, y) || board[y][x] != player {
-					return i
-				}
+			i := 0
+			for ; i < 4 && isInBounds(x, y) && board[y][x] == player; {
+				i++
 				x += incx
 				y += incy
 			}
-			return 4
+			return i
 		}
 
-		testCapturability := func (x, y int) bool {
+		testCapturability := func (x, y int, captures *[]Position) bool {
 			checkCaptureAxis := func (incx, incy int) bool {
 				if !isInBounds(x - incx, y - incy) || !isInBounds(x + 2 * incx, y + 2 * incy) {
 					return false
-				}
-				if board[y + incy][x + incx] == player {
+				} else if board[y + incy][x + incx] == player {
 					if board[y + 2 * incy][x + 2 * incx] == -player && board[y - incy][x - incx] == 0 {
-						captures = append(captures, Position{x - incx, y - incy})
+						*captures = append(*captures, Position{x - incx, y - incy})
 						return true
 					} else if board[y + 2 * incy][x + 2 * incx] == 0 && board[y - incy][x - incx] == -player {
-						captures = append(captures, Position{x + incx * 2, y + incy * 2})
+						*captures = append(*captures, Position{x + incx * 2, y + incy * 2})
 						return true
 					}
 				}
@@ -146,53 +146,66 @@ func checkVictory2(board *Board, x, y, player int) (AlignmentType, []Position) {
 			return horizontal || vertical || diagLeft || diagRight
 		}
 
-		getBreakingCaptures := func (x, y, incx, incy, pawns int) bool {
+		getBreakingCaptures := func (x, y, incx, incy, pawns int) (bool, []Position) {
+			captures := make([]Position, 0, 1)
+
 			capturable := false
 			start := pawns - 4
 			end := 4
 			x, y = x + incx * start, y + incy * start
 			for i := start; i <= end; i++ {
-				capturable = testCapturability(x, y) || capturable
+				capturable = testCapturability(x, y, &captures) || capturable
 				x += incx
 				y += incy
 			}
-			return capturable
+			return capturable, captures
 		}
 
 		pawnsRight := countPawnsOnDir(incx, incy)
 		pawnsLeft := countPawnsOnDir(-incx, -incy)
 		pawns := pawnsRight + pawnsLeft
 		if pawns >= 4 {
+			isBreakable, captures := getBreakingCaptures(x - incx * pawnsLeft, y - incy * pawnsLeft, incx, incy, pawns)
+			if isBreakable {
+				return capturableAlignment, captures
+			}
+			return winningAlignment, nil
+		}
+		return regularAlignment, nil
+	}
+
+	best := regularAlignment
+
+	updateCaptures := func (alignType AlignmentType, capts []Position) {
+		if alignType > best {
+			best = alignType
+		}
+		if alignType == capturableAlignment {
 			if captures == nil {
-				captures = make([]Position, 0, 1)
-			}
-			isBreakable := getBreakingCaptures(x - incx * pawnsLeft, y - incy * pawnsLeft, incx, incy, pawns)
-			if !isBreakable {
-				return winningAlignment
+				captures = capts
 			} else {
-				return capturableAlignment
+				updatedCaptures := make([]Position, 0, len(captures))
+				for _, pos := range(captures) {
+					for _, otherPos := range(capts) {
+						if pos == otherPos {
+							updatedCaptures = append(updatedCaptures, pos)
+							break
+						}
+					}
+				}
+				captures = updatedCaptures
 			}
-		} else {
-			return regularAlignment
 		}
 	}
 
-	getMax := func (axes []AlignmentType) AlignmentType {
-		max := regularAlignment
-		for _, axis := range(axes) {
-			if axis > max {
-				max = axis
-			}
-		}
-		return max
+	updateCaptures(checkAxis(1, 0))
+	updateCaptures(checkAxis(0, 1))
+	updateCaptures(checkAxis(1, 1))
+	updateCaptures(checkAxis(-1, 1))
+	if best == capturableAlignment && len(captures) == 0 {
+		return winningAlignment, nil
 	}
-
-	victoryHorizontal := checkAxis(1, 0)
-	victoryVertical := checkAxis(0, 1)
-	victoryDiagLeft := checkAxis(1, 1)
-	victoryDiagRight := checkAxis(-1, 1)
-	max := getMax([]AlignmentType{victoryHorizontal, victoryVertical, victoryDiagLeft, victoryDiagRight})
-	return max, captures
+	return best, captures
 }
 
 func checkVictory(values *Board, nb int, y int, x int) bool {

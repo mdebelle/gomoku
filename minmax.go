@@ -36,9 +36,9 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 		fmt.Println("-----------BEFORE------------")
 		for y := 0; y < 19; y++ {
 			for x := 0; x < 19; x++ {
-				a, e, c, d := getScore(&b.alignTable, x, y, player)
+				a, e, c, d := getScore(&b.alignTable, x, y, player_one)
 				fmt.Printf("[%v ", a + e + c + d)
-				a, e, c, d = getScore(&b.alignTable, x, y, -player)
+				a, e, c, d = getScore(&b.alignTable, x, y, player_two)
 				fmt.Printf("%v]", a + e + c + d)
 			}
 			fmt.Println()
@@ -50,6 +50,18 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
+
+
+		fmt.Println("-----------AFTER------------")
+		for y := 0; y < 19; y++ {
+			for x := 0; x < 19; x++ {
+				a, e, c, d := getScore(&b.alignTable, x, y, player_one)
+				fmt.Printf("[%v ", a + e + c + d)
+				a, e, c, d = getScore(&b.alignTable, x, y, player_two)
+				fmt.Printf("%v]", a + e + c + d)
+			}
+			fmt.Println()
+		}
 
 		if s >= beta {
 			return move.pos.x, move.pos.y, boardData

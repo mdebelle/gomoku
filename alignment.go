@@ -91,9 +91,7 @@ func clearAlign(board *Board, alignTable *[2]Board, lst []Position, hey int) {
 	}
 }
 
-func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) []AlignScore {
-
-	var lst []AlignScore
+func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) {
 	
 	clearOponentSituation := func (player, py, px, axe, start int) {
 		for j := start; j < 5; j++ {
@@ -104,7 +102,6 @@ func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) []AlignSc
 	updateDistanceScore := func (player, px, py, axe, i int, state bool) bool {
 		if isInBounds(px, py) {
 			if !state && board[py][px] == 0 {
-				lst = append(lst, AlignScore{alignTable[(player_one+1)/2][py][px], alignTable[(player_two+1)/2][py][px], px, py})
 				alignTable[(player+1)/2][py][px] |= (1 << uint(axe-i))
 				clearOponentSituation(player, py, px, axe, i)
 			} else if board[py][px] == -player {
@@ -144,5 +141,4 @@ func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) []AlignSc
 		rt = updateDistanceScore(player, x+i, y-i, axeRightTop, i, rt)
 		lb = updateDistanceScore(player, x-i, y+i, axeLeftBottom, i, lb)
 	}
-	return lst
 }

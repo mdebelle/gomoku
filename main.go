@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/18 18:29:00 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/18 19:28:30 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -15,7 +15,6 @@ package main
 import (
 	"fmt"
 	"math"
-//	"math/rand"
 	"runtime"
 	"github.com/veandco/go-sdl2/sdl"
 	"os"
@@ -108,343 +107,6 @@ func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
 		!doesDoubleFreeThree(freeThrees, x, y, player)
 }
 
-func checkVictory2(board *Board, x, y, player int) (AlignmentType, []Position) {
-	var captures []Position = nil
-
-	checkAxis := func (incx, incy int) (AlignmentType, []Position) {
-		countPawnsOnDir := func (incx, incy int) int {
-			x, y := x + incx, y + incy
-			i := 0
-			for ; i < 4 && isInBounds(x, y) && board[y][x] == player; {
-				i++
-				x += incx
-				y += incy
-			}
-			return i
-		}
-
-		testCapturability := func (x, y int, captures *[]Position) bool {
-			checkCaptureAxis := func (incx, incy int) bool {
-				if !isInBounds(x - incx, y - incy) || !isInBounds(x + 2 * incx, y + 2 * incy) {
-					return false
-				} else if board[y + incy][x + incx] == player {
-					if board[y + 2 * incy][x + 2 * incx] == -player && board[y - incy][x - incx] == 0 {
-						*captures = append(*captures, Position{x - incx, y - incy})
-						return true
-					} else if board[y + 2 * incy][x + 2 * incx] == 0 && board[y - incy][x - incx] == -player {
-						*captures = append(*captures, Position{x + incx * 2, y + incy * 2})
-						return true
-					}
-				}
-				return false
-			}
-
-			horizontal := checkCaptureAxis(1, 0) || checkCaptureAxis(-1, 0)
-			vertical := checkCaptureAxis(0, 1) || checkCaptureAxis(0, -1)
-			diagLeft := checkCaptureAxis(1, 1) || checkCaptureAxis(-1, -1)
-			diagRight := checkCaptureAxis(-1, 1) || checkCaptureAxis(1, -1)
-			return horizontal || vertical || diagLeft || diagRight
-		}
-
-		getBreakingCaptures := func (x, y, incx, incy, pawns int) (bool, []Position) {
-			captures := make([]Position, 0, 1)
-
-			capturable := false
-			start := pawns - 4
-			end := 4
-			x, y = x + incx * start, y + incy * start
-			for i := start; i <= end; i++ {
-				capturable = testCapturability(x, y, &captures) || capturable
-				x += incx
-				y += incy
-			}
-			return capturable, captures
-		}
-
-		pawnsRight := countPawnsOnDir(incx, incy)
-		pawnsLeft := countPawnsOnDir(-incx, -incy)
-		pawns := pawnsRight + pawnsLeft
-		if pawns >= 4 {
-			isBreakable, captures := getBreakingCaptures(x - incx * pawnsLeft, y - incy * pawnsLeft, incx, incy, pawns)
-			if isBreakable {
-				return capturableAlignment, captures
-			}
-			return winningAlignment, nil
-		}
-		return regularAlignment, nil
-	}
-
-	best := regularAlignment
-
-	updateCaptures := func (alignType AlignmentType, capts []Position) {
-		if alignType > best {
-			best = alignType
-		}
-		if alignType == capturableAlignment {
-			if captures == nil {
-				captures = capts
-			} else {
-				updatedCaptures := make([]Position, 0, len(captures))
-				for _, pos := range(captures) {
-					for _, otherPos := range(capts) {
-						if pos == otherPos {
-							updatedCaptures = append(updatedCaptures, pos)
-							break
-						}
-					}
-				}
-				captures = updatedCaptures
-			}
-		}
-	}
-
-	updateCaptures(checkAxis(1, 0))
-	updateCaptures(checkAxis(0, 1))
-	updateCaptures(checkAxis(1, 1))
-	updateCaptures(checkAxis(-1, 1))
-	if best == capturableAlignment && len(captures) == 0 {
-		return winningAlignment, nil
-	}
-	return best, captures
-}
-
-func checkVictory(values *Board, nb int, y int, x int) bool {
-	f := func (incx, incy int) int {
-		x, y := x + incx, y + incy
-		for i := 0; i < 4; i++ {
-			if !isInBounds(x, y) || values[y][x] != nb {
-				return i
-			}
-			x += incx
-			y += incy
-		}
-		return 5
-	}
-	if 	(f(-1, -1) + f(1, 1) >= 4 && !checkCaptures(values, nb, x, y, 1, 1)) ||
-		(f(1, -1) + f(-1, 1) >= 4 && !checkCaptures(values, nb, x, y, 1, -1)) ||
-		(f(0, -1) + f(0, 1) >= 4 && !checkCaptures(values, nb, x, y, 0, 1)) ||
-		(f(-1, 0) + f(1, 0) >= 4 && !checkCaptures(values, nb, x, y, 1, 0)) {
-		return true
-	}
-	return false
-}
-
-// TODO: Create a list of possible anti-victory captures
-func checkCaptures(values *Board, nb, x, y, incx, incy int) bool {
-	checkAxis := func (x, y, incx, incy int) bool {
-		if !isInBounds(x - incx, y - incy) || !isInBounds(x + 2 * incx, y + 2 * incy) {
-			return false
-		}
-		if values[y + incy][x + incx] == nb {
-			if values[y + 2 * incy][x + 2 * incx] == -nb && values[y - incy][x - incx] == 0 {
-				victory.X = x - incx
-				victory.Y = y - incy
-				victory.Todo = true
-				return true
-			} else if values[y + 2 * incy][x + 2 * incx] == 0   && values[y - incy][x - incx] == -nb {
-				victory.X = x + 2 * incx
-				victory.Y = y + 2 * incy
-				victory.Todo = true
-				return true
-			}
-		}
-		return false
-	}
-	f := func (incx, incy int) bool {
-		x, y := x, y
-		for i := 0; i < 5; i++ {
-			if !isInBounds(x, y) || values[y][x] != nb {
-				return false
-			} else if checkAxis(x, y, -1, -1) || checkAxis(x, y, 1, 1) ||
-				checkAxis(x, y, 1, -1) || checkAxis(x, y, -1, 1) ||
-				checkAxis(x, y, 0, -1) || checkAxis(x, y, 0, 1) ||
-				checkAxis(x, y, -1, 0) || checkAxis(x, y, 1, 0) {
-				return true
-			}
-			x += incx
-			y += incy
-		}
-		return false
-	}
-	return f(incx, incy) || f(-incx, -incy)
-}
-
-func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
-	// TODO: SOOOOO SLOOOOOW do something
-
-	if debug { defer timeFunc(time.Now(), "checkDoubleThree") }
-
-	const (
-		pat1 = 0x1A5 // -00--
-		pat2 = 0x199 // -0-0-
-		pat3 = 0x169 // --00-
-		mask = 0x3FF // 2 * 5 bits
-	)
-
-	checkAxis := func(x, y, incx, incy, axis int) {
-		if !isInBounds(x, y) || board[y][x] != empty {
-			return
-		}
-		flags := uint32(0)
-
-		// TODO: Perform this formatting on the entire line/column/diagonal
-		tmp_x, tmp_y := x - incx*4, y - incy*4
-		i := uint(0)
-		for ; i < 4; i++ {
-			if isInBounds(tmp_x, tmp_y) {
-				flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
-			}
-			tmp_x, tmp_y = tmp_x + incx, tmp_y + incy
-		}
-		tmp_x, tmp_y = x + incx, y + incy
-		for ; i < 8; i++ {
-			if isInBounds(tmp_x, tmp_y) {
-				flags |= uint32(board[tmp_y][tmp_x] * color + 1) << ((7 - i)*2)
-			} else {
-				break
-			}
-			tmp_x, tmp_y = tmp_x + incx, tmp_y + incy
-		}
-
-		pos1 := (flags >> (2*3)) & mask
-		pos2 := (flags >> (2*2)) & mask
-		pos3 := (flags >> (2*1)) & mask
-		pos4 := flags & mask
-		createsFreeThree := pos4 == pat1 ||
-							pos4 == pat2 ||
-							pos4 == pat3 ||
-							pos3 == pat1 ||
-							pos3 == pat2 ||
-							pos3 == pat3 ||
-							pos2 == pat1 ||
-							pos2 == pat2 ||
-							pos2 == pat3 ||
-							pos1 == pat1 ||
-							pos1 == pat2 ||
-							pos1 == pat3
-		if createsFreeThree {
-			freeThrees[y][x] |= axis
-		} else {
-			freeThrees[y][x] &= ^axis
-		}
-	}
-
-	if board[y][x] == empty {
-		checkAxis(x, y, 0, 1, VerticalAxisMask)
-		checkAxis(x, y, 1, 0, HorizontalAxisMask)
-		checkAxis(x, y, 1, -1, LeftDiagAxisMask)
-		checkAxis(x, y, 1, 1, RightDiagAxisMask)
-	}
-	for i := 1; i <= 4; i++ {
-		checkAxis(x, y + i, 0, 1, VerticalAxisMask)
-		checkAxis(x, y - i, 0, 1, VerticalAxisMask)
-		checkAxis(x + i, y, 1, 0, HorizontalAxisMask)
-		checkAxis(x - i, y, 1, 0, HorizontalAxisMask)
-		checkAxis(x + i, y - i, 1, -1, LeftDiagAxisMask)
-		checkAxis(x - i, y + i, 1, -1, LeftDiagAxisMask)
-		checkAxis(x + i, y + i, 1, 1, RightDiagAxisMask)
-		checkAxis(x - i, y - i, 1, 1, RightDiagAxisMask)
-	}
-}
-
-func getCaptures(board *Board, x, y, player  int, captures *[]Position) {
-	captureOnAxis := func (incx, incy int) {
-		if !isInBounds(x + 3 * incx, y + 3 * incy) {
-			return
-		}
-		if	board[y + incy][x + incx] == -player &&
-			board[y + 2 * incy][x + 2 * incx] == -player &&
-		 	board[y + 3 * incy][x + 3 * incx] == player {
-			*captures = append(*captures, Position{x + incx, y + incy})
-			*captures = append(*captures, Position{x + incx * 2, y + incy * 2})
-		}
-	}
-	captureOnAxis(-1, -1)
-	captureOnAxis(1, 1)
-	captureOnAxis(1, -1)
-	captureOnAxis(-1, 1)
-	captureOnAxis(0, -1)
-	captureOnAxis(0, 1)
-	captureOnAxis(-1, 0)
-	captureOnAxis(1, 0)
-}
-
-func doCaptures(board *Board, captures *[]Position) {
-	for _, capture := range *captures {
-		board[capture.y][capture.x] = empty
-	}
-}
-
-func undoCaptures(board *Board, captures *[]Position, player int) {
-	for _, capture := range *captures {
-		board[capture.y][capture.x] = -player
-	}
-}
-
-func doesDoubleFreeThreePlayer(freeThrees *Board, x, y int) bool {
-	freeThreesCount := 0
-	point := freeThrees[y][x]
-	if (point == 0) {
-		return false
-	}
-	for i := uint(0); i < 4; i++ {
-		if (point & (1 << i)) != 0 {
-			freeThreesCount++
-		}
-	}
-	return freeThreesCount == 2
-}
-
-func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
-	playerId := (player + 1) / 2
-	return doesDoubleFreeThreePlayer(&freeThrees[playerId], x, y)
-}
-
-func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures []Position) {
-	// TODO: Two functions -> update from move and update from move cancelation
-	if debug { defer timeFunc(time.Now(), "updateFreeThree") }
-
-	if (board[y][x] != empty) {
-		freeThrees[0][y][x] = 0
-		freeThrees[1][y][x] = 0
-	}
-	checkDoubleThree(board, &freeThrees[(player + 1) / 2], x, y, player)
-	checkDoubleThree(board, &freeThrees[(-player + 1) / 2], x, y, -player)
-	for _, pos := range captures {
-		if (board[pos.y][pos.x] != empty) {
-			freeThrees[0][pos.y][pos.x] = 0
-			freeThrees[1][pos.y][pos.x] = 0
-		}
-		checkDoubleThree(board, &freeThrees[(player + 1) / 2], pos.x, pos.y, player)
-		checkDoubleThree(board, &freeThrees[(-player + 1) / 2], pos.x, pos.y, -player)
-	}
-}
-
-func getScore(alignTable *[2]Board, x, y, player int) (int, int, int, int) {
-
-	if !isInBounds(x,y) { return 0,0,0,0 }
-
-	const (
-		maskleft = 0x0000000f
-		maskright = 0x000000f0
-		masktop = 0x00000f00
-		maskbottom = 0x0000f000
-		masklefttop = 0x000f0000
-		maskrightbottom = 0x00f00000
-		maskrighttop = 0x0f000000
-		maskleftbottom = 0xf0000000
-	)
-
-	v := alignTable[(player+1)/2][y][x]
-
-	axeLeftRight := (v & maskleft) + ((v & maskright) >> 4)
-	axeTopBottom := ((v & masktop) >> 8) + ((v & maskbottom) >> 12)
-	axeLeftTopRightBottom := ((v & masklefttop) >> 16) + ((v & maskrightbottom) >> 20)
-	axeRightTopLeftBottom := ((v & maskrighttop) >> 24) + ((v & maskleftbottom) >> 28)
-
-	return axeLeftRight, axeTopBottom, axeLeftTopRightBottom, axeRightTopLeftBottom
-}
-
 func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position, hey int) {
 
 	clearOponentSituation := func (player, py, px, axe, start int) {
@@ -510,62 +172,6 @@ func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position,
 	}
 }
 
-func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) []AlignScore {
-
-	var lst []AlignScore
-	
-	clearOponentSituation := func (player, py, px, axe, start int) {
-		for j := start; j < 5; j++ {
-			alignTable[(-player+1)/2][py][px] &= ^(1 << uint(axe-j))
-		}
-	}
-
-	updateDistanceScore := func (player, px, py, axe, i int, state bool) bool {
-		if isInBounds(px, py) {
-			if !state && board[py][px] == 0 {
-				lst = append(lst, AlignScore{alignTable[(player_one+1)/2][py][px], alignTable[(player_two+1)/2][py][px], px, py})
-				alignTable[(player+1)/2][py][px] |= (1 << uint(axe-i))
-				clearOponentSituation(player, py, px, axe, i)
-			} else if board[py][px] == -player {
-				state = true
-			}
-		}
-		return state
-	}
-
-	const (
-		axeLeft = 4
-		axeRight = 8
-		axeTop = 12
-		axeBottom = 16
-		axeLeftTop = 20
-		axeRightBottom = 24
-		axeRightTop = 28
-		axeLeftBottom = 32
-	)
-
-	var l, lt, t, rt, r, rb, b, lb bool
-
-	alignTable[(player+1)/2][y][x] = 0
-	alignTable[(-player+1)/2][y][x] = 0
-	
-	for i:= 1; i < 5; i++ {
-		// Axe left right
-		l = updateDistanceScore(player, x-i, y, axeLeft, i, l)
-		r = updateDistanceScore(player, x+i, y, axeRight, i, r)
-		// Axe top left
-		t = updateDistanceScore(player, x, y-i, axeTop, i, t)
-		b = updateDistanceScore(player, x, y+i, axeBottom, i, b)
-		// Axe lefttop rightbottom
-		lt = updateDistanceScore(player, x-i, y-i, axeLeftTop, i, lt)
-		rb = updateDistanceScore(player, x+i, y+i, axeRightBottom, i, rb)
-		// Axe righttop leftbottom
-		rt = updateDistanceScore(player, x+i, y-i, axeRightTop, i, rt)
-		lb = updateDistanceScore(player, x-i, y+i, axeLeftBottom, i, lb)
-	}
-	return lst
-}
-
 func checkRules(values *Board, freeThrees, alignTable *[2]Board, capture *[3]int, x, y, player int) int {
 	if doesDoubleFreeThree(freeThrees, x, y, player) {
 		fmt.Printf("Nope\n")
@@ -621,7 +227,6 @@ func run() int {
 		better			BoardData
 	)
 	
-	
 	// Log Module
 	f, err := os.OpenFile("testlogfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {
@@ -632,6 +237,7 @@ func run() int {
 	log.SetOutput(f)
 	log.Printf("---NEW GAME---\n")
 
+	// Init SDL
 	sdl.Init(sdl.INIT_EVERYTHING)
 	
 	// Drawing Module

@@ -138,7 +138,7 @@ func (this *AIBoard) DoMove(move Move) {
 	doCaptures(&this.board, &move.captures)
 	this.capturesNb[this.player + 1] += len(move.captures)
 	updateAlign(&this.board, &this.alignTable, move.pos.x, move.pos.y, this.player)
-	updateAlignAfterCapture(&this.board, &this.alignTable, move.captures, -this.player)
+	clearAlign(&this.board, &this.alignTable, move.captures, -this.player)
 
 	/*
 	this.UpdateAlignmentsAround(move.pos)
@@ -153,7 +153,7 @@ func (this *AIBoard) UndoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = empty
 	undoCaptures(&this.board, &move.captures, this.player)
 	this.capturesNb[this.player + 1] -= len(move.captures)
-	updateAlignAfterCapture(&this.board, &this.alignTable, []Position{move.pos}, this.player)
+	clearAlign(&this.board, &this.alignTable, []Position{move.pos}, this.player)
 	for _, pos := range move.captures {
 		updateAlign(&this.board, &this.alignTable, pos.x, pos.y, -this.player)
 	}

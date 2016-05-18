@@ -137,8 +137,8 @@ func (this *AIBoard) DoMove(move Move) {
 	this.board[move.pos.y][move.pos.x] = this.player
 	doCaptures(&this.board, &move.captures)
 	this.capturesNb[this.player + 1] += len(move.captures)
-	updateAlign(&this.board, &this.alignTable, move.pos.x, move.pos.y, this.player)
 	clearAlign(&this.board, &this.alignTable, move.captures, -this.player)
+	updateAlign(&this.board, &this.alignTable, move.pos.x, move.pos.y, this.player)
 
 	/*
 	this.UpdateAlignmentsAround(move.pos)
@@ -305,6 +305,10 @@ func (board *AIBoard) Evaluate(pos Position) int {
 
 //	var v1, v2 int
 
+	p_tmp := board.board[pos.y][pos.x]
+	board.board[pos.y][pos.x] = 0
+	if p_tmp != 0 { clearAlign(&board.board, &board.alignTable, []Position{pos}, p_tmp) }
+
 	a1, a2, a3, a4 := getScore(&board.alignTable, pos.x, pos.y, board.player)
 	v1 := a1 + a2 + a3 + a4
 
@@ -317,20 +321,24 @@ func (board *AIBoard) Evaluate(pos Position) int {
 		return math.MaxInt32 + board.depth
 	}
 */
-
 	b1, b2, b3, b4 := getScore(&board.alignTable, pos.x, pos.y, -board.player)
 	v2 := b1 + b2 + b3 + b4
-
+	
+	if p_tmp != 0 { updateAlign(&board.board, &board.alignTable, pos.x, pos.y, p_tmp) }
 	max := 0
 	for _, p := range []int{b1, b2, b3, b4, a1, a2, a3, a4} {
+		if p == 15 || p == 22 || p == 24 {
+			return math.MaxInt32 + board.depth
+		}
 		if p > max {
 			max = p
 		}
 	}
 
-	if max == 15 || max == 22 || max == 24 || board.capturesNb[board.player + 1] >= 10 {
+	if board.capturesNb[board.player + 1] >= 10 {
 		return math.MaxInt32 + board.depth
 	}
+	
 
 	//v2 = board.checkAlign(pos, -board.player)
 	//v2 = board.GetPositionAlignmentScore(pos, -board.player)

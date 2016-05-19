@@ -43,7 +43,7 @@ func TestVictory(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 1, 0, player_one)
 	checkRules(&board, &free, &align, &capture, 2, 0, player_one)
 	checkRules(&board, &free, &align, &capture, 3, 0, player_one)
-	alignType, captures := checkVictory2(&board, 3, 0, player_one)
+	alignType, captures := checkVictory(&board, 3, 0, player_one)
 	testVictory(alignType, regularAlignment, captures, nil, t)
 }
 
@@ -55,7 +55,7 @@ func TestVictory2(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 2, 0, player_one)
 	checkRules(&board, &free, &align, &capture, 3, 0, player_one)
 	checkRules(&board, &free, &align, &capture, 4, 0, player_one)
-	alignType, captures := checkVictory2(&board, 4, 0, player_one)
+	alignType, captures := checkVictory(&board, 4, 0, player_one)
 	testVictory(alignType, winningAlignment, captures, nil, t)
 }
 
@@ -67,7 +67,7 @@ func TestVictory3(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 3, 0, player_one)
 	checkRules(&board, &free, &align, &capture, 4, 0, player_one)
 	checkRules(&board, &free, &align, &capture, 2, 0, player_one)
-	alignType, captures := checkVictory2(&board, 2, 0, player_one)
+	alignType, captures := checkVictory(&board, 2, 0, player_one)
 	testVictory(alignType, winningAlignment, captures, nil, t)
 }
 
@@ -85,7 +85,7 @@ func TestVictory4(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 0, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 2, 2, player_one)
 	checkRules(&board, &free, &align, &capture, 4, 1, player_one)
-	alignType, captures := checkVictory2(&board, 4, 1, player_one)
+	alignType, captures := checkVictory(&board, 4, 1, player_one)
 	testVictory(alignType, capturableAlignment, captures, []Position{{3, 3}}, t)
 }
 
@@ -106,7 +106,7 @@ func TestVictory5(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 1, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 3, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 4, 1, player_one)
-	alignType, captures := checkVictory2(&board, 4, 1, player_one)
+	alignType, captures := checkVictory(&board, 4, 1, player_one)
 	testCaptures := []Position{{0, 3}, {1, 3}, {3, 3}}
 	testVictory(alignType, capturableAlignment, captures, testCaptures, t)
 }
@@ -126,7 +126,7 @@ func TestVictory6(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 5, 1, player_one)
 	checkRules(&board, &free, &align, &capture, 0, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 3, 1, player_one)
-	alignType, captures := checkVictory2(&board, 3, 1, player_one)
+	alignType, captures := checkVictory(&board, 3, 1, player_one)
 	testCaptures := []Position{}
 	testVictory(alignType, winningAlignment, captures, testCaptures, t)
 }
@@ -153,7 +153,7 @@ func TestVictory7(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 5, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 6, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 3, 1, player_one)
-	alignType, captures := checkVictory2(&board, 3, 1, player_one)
+	alignType, captures := checkVictory(&board, 3, 1, player_one)
 	testCaptures := []Position{}
 	testVictory(alignType, winningAlignment, captures, testCaptures, t)
 }
@@ -181,7 +181,7 @@ func TestVictory8(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 6, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 3, 0, player_two)
 	checkRules(&board, &free, &align, &capture, 3, 1, player_one)
-	alignType, captures := checkVictory2(&board, 3, 1, player_one)
+	alignType, captures := checkVictory(&board, 3, 1, player_one)
 	testCaptures := []Position{{0, 3}, {6, 3}}
 	testVictory(alignType, capturableAlignment, captures, testCaptures, t)
 }
@@ -205,7 +205,7 @@ func TestVictory9(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 4, 2, player_one)
 
 	checkRules(&board, &free, &align, &capture, 2, 1, player_one)
-	alignType, captures := checkVictory2(&board, 2, 1, player_one)
+	alignType, captures := checkVictory(&board, 2, 1, player_one)
 	testCaptures := []Position{}
 	testVictory(alignType, winningAlignment, captures, testCaptures, t)
 }
@@ -231,7 +231,7 @@ func TestVictory10(t *testing.T) {
 
 	checkRules(&board, &free, &align, &capture, 2, 1, player_one)
 
-	alignType, captures := checkVictory2(&board, 2, 1, player_one)
+	alignType, captures := checkVictory(&board, 2, 1, player_one)
 	testCaptures := []Position{{3, 3}}
 	checkRules(&board, &free, &align, &capture, 1, 1, player_one)
 	testVictory(alignType, capturableAlignment, captures, testCaptures, t)
@@ -259,7 +259,7 @@ func TestVictory11(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 1, 0, player_two)
 
 	checkRules(&board, &free, &align, &capture, 2, 1, player_one)
-	alignType, captures := checkVictory2(&board, 2, 1, player_one)
+	alignType, captures := checkVictory(&board, 2, 1, player_one)
 	testCaptures := []Position{}
 	testVictory(alignType, winningAlignment, captures, testCaptures, t)
 }
@@ -287,7 +287,7 @@ func TestVictory12(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 3, 2, player_two)
 
 	checkRules(&board, &free, &align, &capture, 2, 1, player_one)
-	alignType, captures := checkVictory2(&board, 2, 1, player_one)
+	alignType, captures := checkVictory(&board, 2, 1, player_one)
 	testCaptures := []Position{}
 	testVictory(alignType, winningAlignment, captures, testCaptures, t)
 }
@@ -316,7 +316,7 @@ func TestVictory13(t *testing.T) {
 	checkRules(&board, &free, &align, &capture, 4, 3, player_two)
 
 	checkRules(&board, &free, &align, &capture, 2, 1, player_one)
-	alignType, captures := checkVictory2(&board, 2, 1, player_one)
+	alignType, captures := checkVictory(&board, 2, 1, player_one)
 	testCaptures := []Position{{1, 3}}
 	testVictory(alignType, capturableAlignment, captures, testCaptures, t)
 }

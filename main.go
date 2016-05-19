@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/18 19:28:30 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/19 20:16:56 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -52,11 +52,6 @@ type Position struct {
 	x, y int
 }
 
-type mustdo struct {
-	Todo	bool
-	X, Y    int
-}
-
 type AlignScore struct {
 	score_player_one	int
 	score_player_two	int
@@ -92,8 +87,6 @@ const (
 )
 
 type Unit struct {}
-
-var victory mustdo
 
 var textDrawer *TextDrawer
 
@@ -172,28 +165,48 @@ func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
 // 	}
 // }
 
-func checkRules(values *Board, freeThrees, alignTable *[2]Board, capture *[3]int, x, y, player int) int {
-	if doesDoubleFreeThree(freeThrees, x, y, player) {
-		fmt.Printf("Nope\n")
-		return player
-	}
-	updateAlign(values, alignTable, x, y, player)
-	values[y][x] = player
-	victory := checkVictory(values, player, y, x)
-	if victory == true {
-		fmt.Printf("Victory \\o/ %d\n", player)
-		return 0
+type MoveType int
+
+const (
+	regularMove MoveType = iota
+	winByAlignment
+	winByCapture
+)
+
+func canPlay(board *Board, freeThrees *[2]Board, forcedCaptures []Position, x, y, player int) bool {
+	return board[y][x] == empty &&
+		!doesDoubleFreeThree(freeThrees, x, y, player) &&
+		(forcedCaptures == nil || containsPosition(forcedCaptures, Position{x, y}))
+}
+
+func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]int, x, y, player int) (MoveType, []Position) {
+	updateAlign(board, alignTable, x, y, player)
+	board[y][x] = player
+	alignmentType, forcedCaptures := checkVictory(board, x, y, player)
+	switch alignmentType {
+	case winningAlignment:
+		return winByAlignment, nil
+	case regularAlignment:
+		forcedCaptures = nil
 	}
 	captures := make([]Position, 0, 16)
-	getCaptures(values, x, y, player, &captures)
-	doCaptures(values, &captures)
-	capture[player + 1] += len(captures)
-	updateFreeThrees(values, freeThrees, x, y, player, captures)
-	if capture[player + 1] >= 10 {
-		fmt.Printf("capture de ouf \\o/ %d\n", player)
-		return 0
+	getCaptures(board, x, y, player, &captures)
+	doCaptures(board, &captures)
+	capturesNb[player + 1] += len(captures)
+	updateFreeThrees(board, freeThrees, x, y, player, captures)
+	if capturesNb[player + 1] >= 10 {
+		return winByCapture, nil
 	}
-	return -player
+	return regularMove, forcedCaptures
+}
+
+func containsPosition(captures []Position, pos Position) bool {
+	for _, capt := range captures {
+		if pos == capt {
+			return true
+		}
+	}
+	return false
 }
 
 func mousePositionToGrid(val float64) int {
@@ -277,7 +290,7 @@ func run() int {
 
 	player = 1
 	running = true
-	victory.Todo = false
+	var forcedCaptures []Position = nil
 
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -291,18 +304,15 @@ func run() int {
 					px = mousePositionToGrid(float64(t.X))
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
 					log.Printf("p1 -> X |%3d| Y|%3d|\n", px, py)
-					if victory.Todo == true {
-						if px == victory.X && py == victory.Y {
-							player = checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
-							victory.Todo = false
-						} else {
-							fmt.Printf("you must play in [%d][%d]\n", victory.X, victory.Y)
+					if canPlay(&values, &freeThrees, forcedCaptures, px, py, player) {
+						moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
+						forcedCaptures = newForcedCaptures
+						if moveType != regularMove {
+							return 0
 						}
-						fmt.Println(values)
-					} else if values[py][px] == 0 {
-						a,b,c,d := getScore(&alignTable, px, py, player)
-						fmt.Printf("LR %d, TB %d, LTRB %d, RTLB %d\n", a, b, c, d)
-						player = checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
+						player = -player
+					} else {
+						fmt.Println("Can't play here.")
 					}
 				}
 			case *sdl.KeyUpEvent:
@@ -363,25 +373,25 @@ func run() int {
 					log.Printf("---NEW GAME---\n")
 					player = 1
 				}
-			//	fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%d\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+				// fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%d\tmodifiers:%d\tstate:%d\trepeat:%d\n", t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 			}
 		}
 
 		// IA
 		if player_mode == 1 && player == player_two {
-			if victory.Todo == true {
-				fmt.Printf("IA must play -> x[%d] y [%d]\n", victory.X, victory.Y)
-				log.Printf("IA -> X |%3d| Y|%3d|\n", victory.X, victory.Y)
-				player = checkRules(&values, &freeThrees, &alignTable, &capture, victory.X, victory.Y, player)
-				victory.Todo = false
-			} else {
-				var x, y int
-				x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture)
-				fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
-				log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
-				if values[y][x] == 0 {
-					player = checkRules(&values, &freeThrees, &alignTable, &capture, x, y, player)
+			var x, y int
+			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture)
+			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
+			log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
+			if canPlay(&values, &freeThrees, forcedCaptures, px, py, player) {
+				moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
+				forcedCaptures = newForcedCaptures
+				if moveType != regularMove {
+					return 0
 				}
+				player = -player
+			} else {
+				fmt.Println("Can't play here.")
 			}
 			displayAverages()
 			resetTimer()

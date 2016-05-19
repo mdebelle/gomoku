@@ -128,11 +128,14 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 	for i := 0; i < capture[2]; i++ {
 		_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 10), int32(840 - 10), 20, 20})
 	}
-	
+
+	// TODO: Display forced captures
+	/*
 	if (victory.Todo == true) {
 		_ = renderer.SetDrawColor(220, 32, 220, 255)
 		_ = renderer.FillRect(&sdl.Rect{int32((victory.X+1)*40 - 10), int32((victory.Y+1)*40 - 10), 20, 20})
 	}
+*/
 }
 
 func draweval(renderer *sdl.Renderer, values *BoardData) {

@@ -6,13 +6,13 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/18 19:28:48 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/18 19:28:59 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/19 20:09:33 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 package main
 
-func checkVictory2(board *Board, x, y, player int) (AlignmentType, []Position) {
+func checkVictory(board *Board, x, y, player int) (AlignmentType, []Position) {
 	var captures []Position = nil
 
 	checkAxis := func (incx, incy int) (AlignmentType, []Position) {
@@ -110,25 +110,4 @@ func checkVictory2(board *Board, x, y, player int) (AlignmentType, []Position) {
 		return winningAlignment, nil
 	}
 	return best, captures
-}
-
-func checkVictory(values *Board, nb int, y int, x int) bool {
-	f := func (incx, incy int) int {
-		x, y := x + incx, y + incy
-		for i := 0; i < 4; i++ {
-			if !isInBounds(x, y) || values[y][x] != nb {
-				return i
-			}
-			x += incx
-			y += incy
-		}
-		return 5
-	}
-	if 	(f(-1, -1) + f(1, 1) >= 4 && !checkCaptures(values, nb, x, y, 1, 1)) ||
-		(f(1, -1) + f(-1, 1) >= 4 && !checkCaptures(values, nb, x, y, 1, -1)) ||
-		(f(0, -1) + f(0, 1) >= 4 && !checkCaptures(values, nb, x, y, 0, 1)) ||
-		(f(-1, 0) + f(1, 0) >= 4 && !checkCaptures(values, nb, x, y, 1, 0)) {
-		return true
-	}
-	return false
 }

@@ -1,5 +1,139 @@
 package main
 
+// returne weight of alignement in the selected axe
+// and time to expect an wining alignment
+// if space missing return -1 for time
+func winingAlignement(board *Board, axe1, axe2, x, y, player int) (int, int){
+
+	// AlignementGagnant
+	if axe1 == 15 || axe2 == 15 || (axe1 == 14 && axe2 >= 8) || (axe2 == 14 && axe1 >= 8) || (axe1 >= 12 && axe2 >= 12) {
+		return axe1+axe2, 0
+	}
+
+	space := 8
+	chain := 0
+	spaceAndChaine := func (axe int) {
+		for i := uint(3); i >= 0; i-- {
+			if ((axe >> i) & 1) == 0 {
+				if !isInBounds(x-(4-int(i)), y) || board[y][x-(4-int(i))] == -player {
+					space -= int(i+1)
+					break
+				}  
+			} else {
+				chain++
+			} 
+		}
+	}
+	spaceAndChaine(axe1)
+	spaceAndChaine(axe2)
+
+	// Possibility of wining alignment
+	if chain + space >= 5 {
+		if chain >= 5 {
+			return axe1+axe2, 1
+		} else {
+			return axe1+axe2, (5 - chain)
+		}
+	}
+
+	// Space missing
+	return axe1+axe2, -1
+}
+
+func getLeftRightScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
+
+	if !isInBounds(x,y) { return -1, -1 }
+
+	const (
+		maskleft = 0x0000000f
+		maskright = 0x000000f0
+	)
+
+	v := alignTable[(player+1)/2][y][x]
+
+	l := (v & maskleft)
+	r := ((v & maskright) >> 4)
+
+	return winingAlignement(board, l, r, x, y, player)
+}
+
+func getTopBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
+
+	if !isInBounds(x,y) { return -1, -1 }
+
+	const (
+		masktop = 0x00000f00
+		maskbottom = 0x0000f000
+	)
+
+	v := alignTable[(player+1)/2][y][x]
+
+	t := (v & masktop) >> 8
+	b := (v & maskbottom) >> 12
+
+	return winingAlignement(board, t, b, x, y, player)
+}
+
+func getLeftTopRightBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
+
+	if !isInBounds(x,y) { return -1, -1 }
+
+	const (
+		masklefttop = 0x000f0000
+		maskrightbottom = 0x00f00000
+	)
+
+	v := alignTable[(player+1)/2][y][x]
+
+	lt := ((v & masklefttop) >> 16) 
+	rb := ((v & maskrightbottom) >> 20)
+
+	return winingAlignement(board, lt, rb, x, y, player)
+}
+
+func getRightTopLeftBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
+
+	if !isInBounds(x,y) { return -1, -1 }
+
+	const (
+		maskrighttop = 0x0f000000
+		maskleftbottom = 0xf0000000
+	)
+
+	v := alignTable[(player+1)/2][y][x]
+
+	rt := ((v & maskrighttop) >> 24)
+	lb := ((v & maskleftbottom) >> 28)
+
+	return winingAlignement(board, rt, lb, x, y, player)
+}
+
+func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
+	
+	var s, t []int
+
+	s[0], t[0] = getLeftRightScore(board, alignTable, x, y, player)
+	s[1], t[1] = getTopBottomScore(board, alignTable, x, y, player)
+	s[2], t[2] = getLeftTopRightBottomScore(board, alignTable, x, y, player)
+	s[3], t[3] = getRightTopLeftBottomScore(board, alignTable, x, y, player)
+	min, indexmin := 8, 0
+	max, indexmax := 0, 0
+	
+	for i, v := range t {
+		if  v < min && v >= 0 {
+			min = v
+			indexmin = i
+		}
+		if v > max {
+			max = v
+			indexmax = i
+		}
+	}
+	
+	return s[indexmin], s[indexmax]
+
+}
+
 
 func getScore(alignTable *[2]Board, x, y, player int) (int, int, int, int) {
 

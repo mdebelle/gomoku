@@ -379,12 +379,20 @@ func run() int {
 
 		// IA
 		if player_mode == 1 && player == player_two {
+
 			var x, y int
 			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture)
 			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 			log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 			if canPlay(&values, &freeThrees, forcedCaptures, x, y, player) {
 				moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, x, y, player)
+				forcedCaptures = newForcedCaptures
+				if moveType != regularMove {
+					return 0
+				}
+				player = -player
+			} else if forcedCaptures != nil {
+				moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, forcedCaptures[0].x, forcedCaptures[0].y, player)
 				forcedCaptures = newForcedCaptures
 				if moveType != regularMove {
 					return 0

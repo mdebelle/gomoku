@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/18 19:28:48 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/19 20:09:33 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/19 20:38:20 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -19,7 +19,7 @@ func checkVictory(board *Board, x, y, player int) (AlignmentType, []Position) {
 		countPawnsOnDir := func (incx, incy int) int {
 			x, y := x + incx, y + incy
 			i := 0
-			for ; i < 4 && isInBounds(x, y) && board[y][x] == player; {
+			for i < 4 && isInBounds(x, y) && board[y][x] == player {
 				i++
 				x += incx
 				y += incy

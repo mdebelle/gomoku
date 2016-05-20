@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/19 20:56:19 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/20 15:23:29 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -182,7 +182,7 @@ func canPlay(board *Board, freeThrees *[2]Board, forcedCaptures []Position, x, y
 func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]int, x, y, player int) (MoveType, []Position) {
 	updateAlign(board, alignTable, x, y, player)
 	board[y][x] = player
-	alignmentType, forcedCaptures := checkVictory(board, x, y, player)
+	alignmentType, forcedCaptures := checkVictory(board, capturesNb, x, y, player)
 	switch alignmentType {
 	case winningAlignment:
 		return winByAlignment, nil

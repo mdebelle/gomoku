@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/20 15:23:29 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/20 15:53:22 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -386,13 +386,6 @@ func run() int {
 			log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 			if canPlay(&values, &freeThrees, forcedCaptures, x, y, player) {
 				moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, x, y, player)
-				forcedCaptures = newForcedCaptures
-				if moveType != regularMove {
-					return 0
-				}
-				player = -player
-			} else if forcedCaptures != nil {
-				moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, forcedCaptures[0].x, forcedCaptures[0].y, player)
 				forcedCaptures = newForcedCaptures
 				if moveType != regularMove {
 					return 0

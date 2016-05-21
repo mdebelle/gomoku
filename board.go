@@ -112,8 +112,13 @@ func (board *AIBoard) GetSearchSpace() []Position {
 	return moves
 }
 
-func (this *AIBoard) GetNextMoves() []Move {
-	positions := this.GetSearchSpace()
+func (this *AIBoard) GetNextMoves(forcedCaptures []Position) []Move {
+	var positions []Position
+	if forcedCaptures != nil {
+		positions = forcedCaptures
+	} else {
+		positions = this.GetSearchSpace()
+	}
 	moves := make([]Move, 0, len(positions))
 	for _, pos := range(positions) {
 		moves = append(moves, this.CreateMove(pos))
@@ -338,7 +343,7 @@ func (board *AIBoard) Evaluate(pos Position) int {
 	if board.capturesNb[board.player + 1] >= 10 {
 		return math.MaxInt32 + board.depth
 	}
-	
+
 
 	//v2 = board.checkAlign(pos, -board.player)
 	//v2 = board.GetPositionAlignmentScore(pos, -board.player)

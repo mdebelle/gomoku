@@ -8,7 +8,7 @@ import (
 
 var nodesSearched = 0
 
-func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int) (int, int, BoardData) {
+func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
 
 	nodesSearched = 0
 	startTime := time.Now()
@@ -18,7 +18,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 
 	b := NewAIBoard(values, freeThree, alignTable, capture, player, depth)
 
-	moves := b.GetNextMoves()
+	moves := b.GetNextMoves(forcedCaptures)
 
 	ax, ay = moves[0].pos.x, moves[0].pos.y
 
@@ -93,7 +93,7 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()
 
-	moves := b.GetNextMoves()
+	moves := b.GetNextMoves(nil)
 
 	for _, move := range(moves) {
 		if move.Score() >= 2e9 {

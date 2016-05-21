@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/20 15:53:22 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/21 18:25:20 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -381,7 +381,7 @@ func run() int {
 		if player_mode == 1 && player == player_two {
 
 			var x, y int
-			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture)
+			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture, forcedCaptures)
 			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 			log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 			if canPlay(&values, &freeThrees, forcedCaptures, x, y, player) {

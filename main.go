@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/22 18:13:44 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/22 22:04:01 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -24,7 +24,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
-const debug = true
+const debug = false
 
 const (
 	empty = 0

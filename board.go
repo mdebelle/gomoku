@@ -10,11 +10,12 @@ import (
 var _ = fmt.Println
 
 type Move struct {
-	pos			Position
-	captures	[]Position
-	aligns		[]AlignScore
-	score		int
-	isWin		bool
+	pos				Position
+	captures		[]Position
+	forcedCaptures	[]Position
+	aligns			[]AlignScore
+	score			int
+	isWin			bool
 }
 
 type ByScore []Move
@@ -43,6 +44,52 @@ func (this *Move) Position() Position {
 	return this.pos
 }
 
+func (this *Move) Evaluate(board *AIBoard) {
+
+	if debug { defer timeFunc(time.Now(), "evaluateMove") }
+
+	// TODO: Do captures before evaluating
+
+	if board.CanWin(this.pos) {
+		alignType, forcedCaptures := checkVictory(&board.board, &board.capturesNb, this.pos.x, this.pos.y, board.player)
+		if alignType == winningAlignment {
+			this.score = math.MaxInt32
+			this.isWin = true
+			return
+		} else if alignType == capturableAlignment {
+			this.forcedCaptures = forcedCaptures
+			this.score = math.MaxInt32
+			return
+		}
+	}
+
+	//Why ?
+	p_tmp := board.board[this.pos.y][this.pos.x]
+	if p_tmp != 0 { clearAlign(&board.board, &board.alignTable, []Position{this.pos}, p_tmp) }
+
+	a1, a2, a3, a4 := getScore(&board.alignTable, this.pos.x, this.pos.y, board.player)
+	v1 := a1 + a2 + a3 + a4
+	b1, b2, b3, b4 := getScore(&board.alignTable, this.pos.x, this.pos.y, -board.player)
+	v2 := b1 + b2 + b3 + b4
+
+	//Why ???
+	if p_tmp != 0 { updateAlign(&board.board, &board.alignTable, this.pos.x, this.pos.y, p_tmp) }
+
+	if board.capturesNb[board.player + 1] + len(this.captures) >= 10 {
+		this.score = math.MaxInt32
+		this.isWin = true
+		return
+	}
+
+	//v1 = board.checkAlign(this.pos, board.player)
+	//v2 = board.checkAlign(this.pos, -board.player)
+
+	myCaptNb := (board.capturesNb[board.player + 1] + len(this.captures))
+	hisCaptNb :=  board.capturesNb[board.player + 1]
+
+	this.score = v1 + v2 + myCaptNb * 2 - hisCaptNb * 2
+}
+
 type AIBoard struct {
 	board		Board
 	freeThrees	[2]Board
@@ -65,12 +112,16 @@ func (board *AIBoard) CapturesNb() *[3]int {
 	return &board.capturesNb
 }
 
-func (board *AIBoard) Player() *int {
-	return &board.player
+func (board *AIBoard) MyCapturesNb() int {
+	return board.capturesNb[board.player + 1]
 }
 
-type FreeThreesUpdate struct {
-	freeThrees	bool // Dunno. New free threes positions/axes.
+func (board *AIBoard) HisCapturesNb() int {
+	return board.capturesNb[-board.player + 1]
+}
+
+func (board *AIBoard) Player() *int {
+	return &board.player
 }
 
 func (board *AIBoard) SwitchPlayer() {
@@ -135,11 +186,8 @@ func (this *AIBoard) GetNextMoves(forcedCaptures []Position) []Move {
 func (this *AIBoard) CreateMove(pos Position) Move {
 	captures := make([]Position, 0, 16)
 	getCaptures(&this.board, pos.x, pos.y, this.player, &captures)
-	// TODO: Real victory test
-	move := Move{pos, captures, []AlignScore{}, 0, false}
+	move := Move{pos, captures, nil, []AlignScore{}, 0, false}
 	move.Evaluate(this)
-//	score := this.Evaluate(pos)
-//	move.score = score
 	return move
 }
 
@@ -188,7 +236,7 @@ func NewAIBoard(values *Board, freeThree, alignTable *[2]Board, capture *[3]int,
 }
 
 func (this *AIBoard) CanWin(pos Position) bool {
-	// TODO: Refacto this
+	// TODO: Redo this
 	a1, a2, a3, a4 := getScore(&this.alignTable, pos.x, pos.y, this.player)
 	for _, p := range []int{a1, a2, a3, a4} {
 		if p == 15 || p == 22 || p == 24 {
@@ -198,96 +246,27 @@ func (this *AIBoard) CanWin(pos Position) bool {
 	return false
 }
 
-/*
-func (this *AIBoard) oldCheckAlign(pos Position, player int) int {
-	s := func (t int) int {
-		u := 0
-		for i := uint(0); i < 8; i++ {
-			if (t >> i) & 0x1 == 1 {
-				u++
-			}
-		}
-		return u
-	}
-
-	f := func (ps []int) {
-		for _, p := range ps {
-			
-		}
-	}
-
-	a1, a2, a3, a4 := getScore(&this.alignTable, pos.x, pos.y, this.player)
-}
-*/
-
-func (this *Move) Evaluate(board *AIBoard) {
-
-	if debug { defer timeFunc(time.Now(), "evaluateMove") }
-
-	// TODO: Do captures
-	// TODO: Test captures
-	// TODO: Save forced captures
-
-	if board.CanWin(this.pos) {
-		alignType, _ := checkVictory(&board.board, &board.capturesNb, this.pos.x, this.pos.y, board.player)
-		if alignType == winningAlignment {
-			this.score = math.MaxInt32
-			this.isWin = true
-			return
-		} else if alignType == capturableAlignment {
-			this.score = math.MaxInt32
-			return
-		}
-	}
-
-	//Why ?
-	p_tmp := board.board[this.pos.y][this.pos.x]
-	if p_tmp != 0 { clearAlign(&board.board, &board.alignTable, []Position{this.pos}, p_tmp) }
-
-	a1, a2, a3, a4 := getScore(&board.alignTable, this.pos.x, this.pos.y, board.player)
-	v1 := a1 + a2 + a3 + a4
-	b1, b2, b3, b4 := getScore(&board.alignTable, this.pos.x, this.pos.y, -board.player)
-	v2 := b1 + b2 + b3 + b4
-
-	//Why ???
-	if p_tmp != 0 { updateAlign(&board.board, &board.alignTable, this.pos.x, this.pos.y, p_tmp) }
-
-	if board.capturesNb[board.player + 1] + len(this.captures) >= 10 {
-		this.score = math.MaxInt32
-		this.isWin = true
-		return
-	}
-
-	//v1 = board.checkAlign(this.pos, board.player)
-	//v2 = board.checkAlign(this.pos, -board.player)
-
-	myCaptNb := (board.capturesNb[board.player + 1] + len(this.captures))
-	hisCaptNb :=  board.capturesNb[board.player + 1]
-
-	this.score = v1 + v2 + myCaptNb * 2 - hisCaptNb * 2
-}
-
-func (board *AIBoard) Evaluate(pos Position) int {
+func (board *AIBoard) Evaluate(pos Position) (score int, quiet bool) {
 
 	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 
-	// TODO: Quiescence
+	// WIP: Quiescence
+	// Also check if there is forced captures on this turn
+	// Maybe put a bolean somewhere
 
 	if board.CanWin(pos) {
 		alignType, _ := checkVictory(&board.board, &board.capturesNb, pos.x, pos.y, board.player)
 		if alignType == winningAlignment {
-			return math.MaxInt32 * 2
+			return math.MaxInt32 * 2, true
 		} else if alignType == capturableAlignment {
-			return math.MaxInt32
+			return math.MaxInt32, false
 		}
 	}
 
 	if board.capturesNb[board.player + 1] >= 10 {
-		return math.MaxInt32
+		return math.MaxInt32, true
 	}
 
-	// TODO: Test only on playable positions
-	// TODO: Or update total with each move
 	eval := func (x, y int) int {
 		a1, a2, a3, a4 := getScore(&board.alignTable, x, y, board.player)
 		v1 := a1 + a2 + a3 + a4
@@ -296,17 +275,19 @@ func (board *AIBoard) Evaluate(pos Position) int {
 		return v1 - v2
 	}
 
-	score := 0
+	score = 0
 
 	// TODO: GetSearchSpace is now too low for this use
+	// TODO: Maybe update total with each move
 	positions := board.GetSearchSpace()
 	for _, pos := range positions {
 		score += eval(pos.x, pos.y)
 	}
 
-	return score + board.capturesNb[board.player + 1] * 2 - board.capturesNb[-board.player + 1] * 2
+	return score + board.MyCapturesNb() * 2 - board.HisCapturesNb() * 2, true
 }
 
+/*
 func (board *AIBoard) checkCaptures(pos Position, player int) int {
 
 	if debug { defer timeFunc(time.Now(), "checkCaptures") }
@@ -363,3 +344,4 @@ func (board *AIBoard) checkAlign(pos Position, player int) int {
 	} 
 	return max
 }
+*/

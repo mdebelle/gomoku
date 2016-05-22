@@ -8,6 +8,18 @@ import (
 
 var nodesSearched = 0
 
+func printAlignments(b *AIBoard) {
+	for y := 0; y < 19; y++ {
+		for x := 0; x < 19; x++ {
+			a, e, c, d := getScore(&b.alignTable, x, y, player_one)
+			fmt.Printf("[%v ", a + e + c + d)
+			a, e, c, d = getScore(&b.alignTable, x, y, player_two)
+			fmt.Printf("%v]", a + e + c + d)
+		}
+		fmt.Println()
+	}
+}
+
 func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
 
 	nodesSearched = 1
@@ -34,39 +46,12 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 			return move.pos.x, move.pos.y, boardData
 		}
 
-		/*
-		fmt.Println("-----------BEFORE------------")
-		for y := 0; y < 19; y++ {
-			for x := 0; x < 19; x++ {
-				a, e, c, d := getScore(&b.alignTable, x, y, player_one)
-				fmt.Printf("[%v ", a + e + c + d)
-				a, e, c, d = getScore(&b.alignTable, x, y, player_two)
-				fmt.Printf("%v]", a + e + c + d)
-			}
-			fmt.Println()
-		}
-*/
-
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
 		s := -searchdeeper(&b, move.pos, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
-
-
-		/*
-		fmt.Println("-----------AFTER------------")
-		for y := 0; y < 19; y++ {
-			for x := 0; x < 19; x++ {
-				a, e, c, d := getScore(&b.alignTable, x, y, player_one)
-				fmt.Printf("[%v ", a + e + c + d)
-				a, e, c, d = getScore(&b.alignTable, x, y, player_two)
-				fmt.Printf("%v]", a + e + c + d)
-			}
-			fmt.Println()
-		}
-*/
 
 		if s >= beta {
 			return move.pos.x, move.pos.y, boardData

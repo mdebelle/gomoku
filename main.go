@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/21 18:25:20 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/22 18:13:44 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -24,7 +24,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
-const debug = false
+const debug = true
 
 const (
 	empty = 0
@@ -99,71 +99,6 @@ func isValidMove(board *Board, freeThrees *[2]Board, x, y, player int) bool {
 		board[y][x] == empty &&
 		!doesDoubleFreeThree(freeThrees, x, y, player)
 }
-
-// func updateAlignAfterCapture(board *Board, alignTable *[2]Board, lst []Position, hey int) {
-
-// 	clearOponentSituation := func (player, py, px, axe, start int) {
-// 		for j := start; j < 5; j++ {
-// 			alignTable[(-player+1)/2][py][px] &= ^(1 << uint(axe-j))
-// 		}
-// 	}
-
-// 	resetAxeScore := func(x, y, incx, incy, axe, c int) {
-// 		var state bool
-
-// 		if !isInBounds(x,y) { return }
-
-// 		player := board[y][x]
-
-// 		if player != 0 {
-// 			for i := 1; i < 5; i++ {
-// 				if isInBounds(x+(i*incx), y+(i*incy)) {
-// 					if !state && board[y+(i*incy)][x+(i*incx)] == 0 {
-// 						alignTable[(player+1)/2][y+(i*incy)][x+(i*incx)] |= (1 << uint(axe-i))
-// 						clearOponentSituation(player, y+(i*incy), x+(i*incx), axe, i)
-// 					} else if board[y+(i*incy)][x+(i*incx)] == -player {
-// 						state = true
-// 					}
-// 				}
-// 			}
-// 		} else {
-// 			if axe % 8 == 0 { 
-// 				alignTable[(hey+1)/2][y][x] &= ^(1 << uint(axe-4-c))
-// 			} else {
-// 				alignTable[(hey+1)/2][y][x] &= ^(1 << uint(axe+4-c))
-// 			}
-// 		}
-// 	}
-
-// 	const (
-// 		axeLeft = 4
-// 		axeRight = 8
-// 		axeTop = 12
-// 		axeBottom = 16
-// 		axeLeftTop = 20
-// 		axeRightBottom = 24
-// 		axeRightTop = 28
-// 		axeLeftBottom = 32
-// 	)
-
-// 	for _, p := range lst {
-
-// 		alignTable[(player_one + 1)/2][p.y][p.x] = 0
-// 		alignTable[(player_two + 1)/2][p.y][p.x] = 0
-
-// 		for i := 1; i < 5; i++ {
-// 			// LeftRight
-// 			resetAxeScore(p.x-i, p.y, 1, 0, axeRight, i)
-// 			resetAxeScore(p.x+i, p.y, -1, 0, axeLeft, i)
-// 			resetAxeScore(p.x, p.y-i, 0, 1, axeBottom, i)
-// 			resetAxeScore(p.x, p.y+i, 0, -1, axeTop, i)
-// 			resetAxeScore(p.x-i, p.y-i, 1, 1, axeRightBottom, i)
-// 			resetAxeScore(p.x+i, p.y+i, -1, -1, axeLeftTop, i)
-// 			resetAxeScore(p.x+i, p.y-i, -1, 1, axeLeftBottom, i)
-// 			resetAxeScore(p.x-i, p.y+i, 1, -1, axeRightTop, i)
-// 		}
-// 	}
-// }
 
 type MoveType int
 

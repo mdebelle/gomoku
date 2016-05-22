@@ -10,8 +10,9 @@ var nodesSearched = 0
 
 func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
 
-	nodesSearched = 0
+	nodesSearched = 1
 	startTime := time.Now()
+	defer func () {fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")}()
 
 	var	ax, ay int
 	var boardData BoardData
@@ -29,10 +30,11 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 	for _, move := range(moves) {
 		boardData[move.pos.y][move.pos.x][6] = 1
 		boardData[move.pos.y][move.pos.x][7] = move.score
-		if move.score >= 2e9 {
+		if move.IsWin() {
 			return move.pos.x, move.pos.y, boardData
 		}
 
+		/*
 		fmt.Println("-----------BEFORE------------")
 		for y := 0; y < 19; y++ {
 			for x := 0; x < 19; x++ {
@@ -43,15 +45,17 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 			}
 			fmt.Println()
 		}
+*/
 
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
-		s := -searchdeeper(&b, move.pos, depth - 1, -beta, -alpha)
+		s := -searchdeeper(&b, move.pos, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
 
 
+		/*
 		fmt.Println("-----------AFTER------------")
 		for y := 0; y < 19; y++ {
 			for x := 0; x < 19; x++ {
@@ -62,6 +66,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 			}
 			fmt.Println()
 		}
+*/
 
 		if s >= beta {
 			return move.pos.x, move.pos.y, boardData
@@ -76,17 +81,18 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 		}
 	}
 
-	fmt.Println(nodesSearched, "nodes searched in", time.Since(startTime), "(", time.Since(startTime) / time.Duration(nodesSearched), "by node)")
 	return ax, ay, boardData
 }
 
-func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
+func searchdeeper(b *AIBoard, move Position, alpha, beta int) int {
 
 	nodesSearched++
 	bestscore := math.MinInt32
 
 	b.depth--
-	if depth == 0 {
+	defer func() {b.depth++}()
+
+	if b.depth == 0 {
 		return -b.Evaluate(move)
 	}
 
@@ -96,11 +102,11 @@ func searchdeeper(b *AIBoard, move Position, depth int, alpha, beta int) int {
 	moves := b.GetNextMoves(nil)
 
 	for _, move := range(moves) {
-		if move.Score() >= 2e9 {
+		if move.IsWin() {
 			return move.Score()
 		}
 		b.DoMove(move)
-		s := -searchdeeper(b, move.Position(), depth - 1, -beta, -alpha)
+		s := -searchdeeper(b, move.Position(), -beta, -alpha)
 		b.UndoMove(move)
 
 		if s >= beta {

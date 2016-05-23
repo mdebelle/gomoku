@@ -61,15 +61,6 @@ type AlignScore struct {
 type Board [19][19]int
 type FreeThreesAxis [2][19][19]int
 
-// copy[0] "score" ia
-// copy[1] "score" player 
-// copy[2] "capturable"
-// copy[3] forbiden ia
-// copy[4] forbiden player
-// korpy[5] score
-// porky[6] isTested?
-// plwoer[7] base Score
-// TODO: Make it an object (or not..)
 type BoardData [19][19][8]int
 
 const (
@@ -115,6 +106,8 @@ func canPlay(board *Board, freeThrees *[2]Board, forcedCaptures []Position, x, y
 }
 
 func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]int, x, y, player int) (MoveType, []Position) {
+	a,b,c,d := getBestScore(board, alignTable, x, y, player)
+	fmt.Printf("best[%d,%d] worst[%d,%d]\n", a,b,c,d)
 	updateAlign(board, alignTable, x, y, player)
 	board[y][x] = player
 	alignmentType, forcedCaptures := checkVictory(board, capturesNb, x, y, player)
@@ -173,6 +166,7 @@ func run() int {
 		freeThrees		[2]Board
 		alignTable		[2]Board
 		better			BoardData
+		forcedCaptures	[]Position = nil
 	)
 	
 	// Log Module
@@ -225,8 +219,8 @@ func run() int {
 
 	player = 1
 	running = true
-	var forcedCaptures []Position = nil
 
+	// loop
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
@@ -240,10 +234,11 @@ func run() int {
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
 					log.Printf("p1 -> X |%3d| Y|%3d|\n", px, py)
 					if canPlay(&values, &freeThrees, forcedCaptures, px, py, player) {
+
 						moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
 						forcedCaptures = newForcedCaptures
 						if moveType != regularMove {
-							return 0
+							player = 0
 						}
 						player = -player
 					} else {
@@ -323,7 +318,7 @@ func run() int {
 				moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, x, y, player)
 				forcedCaptures = newForcedCaptures
 				if moveType != regularMove {
-					return 0
+					player = 0
 				}
 				player = -player
 			} else {

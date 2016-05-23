@@ -1,43 +1,83 @@
 package main
 
+import (
+	"fmt"
+	"math"
+)
+
 // returne weight of alignement in the selected axe
 // and time to expect an wining alignment
 // if space missing return -1 for time
-func winingAlignement(board *Board, axe1, axe2, x, y, player int) (int, int){
+func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (int, int){
 
 	// AlignementGagnant
 	if axe1 == 15 || axe2 == 15 || (axe1 == 14 && axe2 >= 8) || (axe2 == 14 && axe1 >= 8) || (axe1 >= 12 && axe2 >= 12) {
-		return axe1+axe2, 0
+		return math.MaxInt32, 0
 	}
 
-	space := 8
-	chain := 0
-	spaceAndChaine := func (axe int) {
-		for i := uint(3); i >= 0; i-- {
-			if ((axe >> i) & 1) == 0 {
-				if !isInBounds(x-(4-int(i)), y) || board[y][x-(4-int(i))] == -player {
-					space -= int(i+1)
-					break
-				}  
-			} else {
-				chain++
-			} 
+	var t1, t2 [5]int
+	spaceAndChaine := func (axe1, axe2, incx, incy int) {
+
+		j1, j2 := 0, 0
+		lock1, lock2 := false, false
+		for i:= 0; i < 4; i++ {
+			if !lock1 && isInBounds(x+(i*incx), y+(i*incy)) {
+				if ((axe1 >> uint(i)) & 1) == 1 {
+					if (j1 % 2 == 0) { j1++ }
+					t1[j1]++
+				} else  {
+					if (j1 % 2 != 0) { j1++ }
+					if board[y+(i*incy)][x+(i*incx)] == 0 {
+						t1[j1]++
+					} else {
+						lock1 = true
+					}
+				}
+			}
+			if !lock2 && isInBounds(x-(i*incx), y-(i*incy)) {
+				if ((axe2 >> uint(i)) & 1) == 1 {
+					if (j2 % 2 == 0) { j2++ }
+					t2[j2]++
+				} else {
+					if (j2 % 2 != 0) { j2++ }
+					if board[y-(i*incy)][x-(i*incx)] == empty {
+						t2[j2]++
+					} else {
+						lock2 = true
+					}
+				}
+			}
 		}
 	}
-	spaceAndChaine(axe1)
-	spaceAndChaine(axe2)
+	spaceAndChaine(axe1, axe2, incx, incy)
 
+	chaine, space := 1, 0
 	// Possibility of wining alignment
-	if chain + space >= 5 {
-		if chain >= 5 {
-			return axe1+axe2, 1
+	for i := 0; i < 5; i++ {
+		
+		if  i % 2 == 1 {
+			chaine += t1[i] + t2[i]
+			if chaine + space >= 5 {
+				return axe1+axe2, space
+			}
 		} else {
-			return axe1+axe2, (5 - chain)
+			if i < 4 {
+				if t1[i] < t2[i] {
+					if chaine + space + t1[i] + t1[i+1] >= 5 {
+						return axe1+axe2, space + t1[i]
+					}
+				} else { 
+					if chaine + space + t2[i] + t2[i+1] >= 5 {
+						return axe1+axe2, space + t2[i]
+					}
+				}
+				space += t1[i]+t2[i]
+			}
 		}
 	}
 
 	// Space missing
-	return axe1+axe2, -1
+	return axe1+axe2, math.MaxInt32
 }
 
 func getLeftRightScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
@@ -54,7 +94,7 @@ func getLeftRightScore(board *Board, alignTable *[2]Board, x, y, player int) (in
 	l := (v & maskleft)
 	r := ((v & maskright) >> 4)
 
-	return winingAlignement(board, l, r, x, y, player)
+	return winingAlignement(board, l, r, x, y, -1, 0, player)
 }
 
 func getTopBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
@@ -71,7 +111,7 @@ func getTopBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (in
 	t := (v & masktop) >> 8
 	b := (v & maskbottom) >> 12
 
-	return winingAlignement(board, t, b, x, y, player)
+	return winingAlignement(board, t, b, x, y, 0, -1, player)
 }
 
 func getLeftTopRightBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
@@ -88,7 +128,7 @@ func getLeftTopRightBottomScore(board *Board, alignTable *[2]Board, x, y, player
 	lt := ((v & masklefttop) >> 16) 
 	rb := ((v & maskrightbottom) >> 20)
 
-	return winingAlignement(board, lt, rb, x, y, player)
+	return winingAlignement(board, lt, rb, x, y, -1, -1, player)
 }
 
 func getRightTopLeftBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
@@ -105,17 +145,22 @@ func getRightTopLeftBottomScore(board *Board, alignTable *[2]Board, x, y, player
 	rt := ((v & maskrighttop) >> 24)
 	lb := ((v & maskleftbottom) >> 28)
 
-	return winingAlignement(board, rt, lb, x, y, player)
+	return winingAlignement(board, rt, lb, x, y, 1, -1, player)
 }
 
-func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
+func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int, int, int) {
 	
-	var s, t []int
+	var s, t [4]int
 
 	s[0], t[0] = getLeftRightScore(board, alignTable, x, y, player)
 	s[1], t[1] = getTopBottomScore(board, alignTable, x, y, player)
 	s[2], t[2] = getLeftTopRightBottomScore(board, alignTable, x, y, player)
 	s[3], t[3] = getRightTopLeftBottomScore(board, alignTable, x, y, player)
+
+	for i := 0; i < 4; i++ {
+		fmt.Printf("score: %d time: %d\n", s[i], t[i])
+	}
+
 	min, indexmin := 8, 0
 	max, indexmax := 0, 0
 	
@@ -129,9 +174,7 @@ func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, in
 			indexmax = i
 		}
 	}
-	
-	return s[indexmin], s[indexmax]
-
+	return s[indexmin], t[indexmin], s[indexmax], t[indexmax]
 }
 
 

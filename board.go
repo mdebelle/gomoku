@@ -94,7 +94,6 @@ type AIBoard struct {
 	board		Board
 	freeThrees	[2]Board
 	alignTable	[2]Board
-	alignments	[2][19][19][4]int
 	capturesNb	[3]int
 	player		int
 	depth		int
@@ -231,7 +230,7 @@ func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 }
 
 func NewAIBoard(values *Board, freeThree, alignTable *[2]Board, capture *[3]int, player, depth int) AIBoard {
-	board := AIBoard{*values, *freeThree, *alignTable, [2][19][19][4]int{}, *capture, player, depth}
+	board := AIBoard{*values, *freeThree, *alignTable, *capture, player, depth}
 	return board
 }
 

@@ -94,88 +94,26 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 	return axe1+axe2, math.MaxInt32
 }
 
-func getLeftRightScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
-
-	if !isInBounds(x,y) { return -1, -1 }
-
-	const (
-		maskleft = 0x0000000f
-		maskright = 0x000000f0
-	)
-
-	v := alignTable[(player+1)/2][y][x]
-
-	l := (v & maskleft)
-	r := ((v & maskright) >> 4)
-
-	return winingAlignement(board, l, r, x, y, -1, 0, player)
-}
-
-func getTopBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
-
-	if !isInBounds(x,y) { return -1, -1 }
-
-	const (
-		masktop = 0x00000f00
-		maskbottom = 0x0000f000
-	)
-
-	v := alignTable[(player+1)/2][y][x]
-
-	t := (v & masktop) >> 8
-	b := (v & maskbottom) >> 12
-
-	return winingAlignement(board, t, b, x, y, 0, -1, player)
-}
-
-func getLeftTopRightBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
-
-	if !isInBounds(x,y) { return -1, -1 }
-
-	const (
-		masklefttop = 0x000f0000
-		maskrightbottom = 0x00f00000
-	)
-
-	v := alignTable[(player+1)/2][y][x]
-
-	lt := ((v & masklefttop) >> 16) 
-	rb := ((v & maskrightbottom) >> 20)
-
-	return winingAlignement(board, lt, rb, x, y, -1, -1, player)
-}
-
-func getRightTopLeftBottomScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int) {
-
-	if !isInBounds(x,y) { return -1, -1 }
-
-	const (
-		maskrighttop = 0x0f000000
-		maskleftbottom = 0xf0000000
-	)
-
-	v := alignTable[(player+1)/2][y][x]
-
-	rt := ((v & maskrighttop) >> 24)
-	lb := ((v & maskleftbottom) >> 28)
-
-	return winingAlignement(board, rt, lb, x, y, 1, -1, player)
-}
-
 func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, int, int, int) {
 	
 	var s, t [4]int
+	v := alignTable[(player+1)/2][y][x]
 
-	s[0], t[0] = getLeftRightScore(board, alignTable, x, y, player)
-	s[1], t[1] = getTopBottomScore(board, alignTable, x, y, player)
-	s[2], t[2] = getLeftTopRightBottomScore(board, alignTable, x, y, player)
-	s[3], t[3] = getRightTopLeftBottomScore(board, alignTable, x, y, player)
+	applikmask := func(m, i int) int {
+		return ((v & m) >> uint(i)) 
+	}
 
-	/*
+
+	s[0], t[0] = winingAlignement(board, applikmask(0x0000000f, 0), applikmask(0x000000f0, 4), x, y, -1, 0, player)
+	s[1], t[1] = winingAlignement(board, applikmask(0x00000f00, 8), applikmask(0x0000f000, 12), x, y, 0, -1, player)
+	s[2], t[2] = winingAlignement(board, applikmask(0x000f0000, 16), applikmask(0x00f00000, 20), x, y, -1, -1, player)
+	s[3], t[3] = winingAlignement(board, applikmask(0x0f000000, 24), applikmask(0xf0000000, 28), x, y, 1, -1, player)
+
+	fmt.Printf("---\n")
 	for i := 0; i < 4; i++ {
 		fmt.Printf("score: %d time: %d\n", s[i], t[i])
 	}
-//*/
+//
 
 	min, indexmin := 8, 0
 	max, indexmax := 0, 0
@@ -335,3 +273,4 @@ func updateAlign(board *Board, alignTable *[2]Board, x, y, player int) {
 		lb = updateDistanceScore(player, x-i, y+i, axeLeftBottom, i, lb)
 	}
 }
+

@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/22 22:04:01 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/23 21:00:09 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -106,8 +106,8 @@ func canPlay(board *Board, freeThrees *[2]Board, forcedCaptures []Position, x, y
 }
 
 func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]int, x, y, player int) (MoveType, []Position) {
-	a,b,c,d := getBestScore(board, alignTable, x, y, player)
-	fmt.Printf("best[%d,%d] worst[%d,%d]\n", a,b,c,d)
+//	a,b,c,d := getBestScore(board, alignTable, x, y, player)
+//	fmt.Printf("best[%d,%d] worst[%d,%d]\n", a,b,c,d)
 	updateAlign(board, alignTable, x, y, player)
 	board[y][x] = player
 	alignmentType, forcedCaptures := checkVictory(board, capturesNb, x, y, player)

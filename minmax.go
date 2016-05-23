@@ -84,7 +84,7 @@ func searchdeeper(b *AIBoard, move *Move, alpha, beta int) int {
 		if (!quiet) {
 			b.depth += 3
 			score = searchdeeper(b, move, alpha, beta)
-			fmt.Println("GROSSE BITE", score)
+			//fmt.Println("GROSSE BITE", score)
 			b.depth -= 3
 			return score
 		}

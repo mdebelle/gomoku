@@ -1,3 +1,15 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   alignment.go                                       :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2016/05/23 18:35:17 by tmielcza          #+#    #+#             //
+//   Updated: 2016/05/23 19:07:57 by tmielcza         ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
+
 package main
 
 import (
@@ -5,14 +17,16 @@ import (
 	"math"
 )
 
-// returne weight of alignement in the selected axe
+var fmt_debug = fmt.Println
+
+// return weight of alignement in the selected axis
 // and time to expect an wining alignment
-// if space missing return -1 for time
+// if space missing returns +inf for time
 func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (int, int){
 
 	// AlignementGagnant
 	if axe1 == 15 || axe2 == 15 || (axe1 == 14 && axe2 >= 8) || (axe2 == 14 && axe1 >= 8) || (axe1 >= 12 && axe2 >= 12) {
-		return math.MaxInt32, 0
+		return math.MaxInt32, 1
 	}
 
 	var t1, t2 [5]int
@@ -51,7 +65,7 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 	}
 	spaceAndChaine(axe1, axe2, incx, incy)
 
-	chaine, space := 1, 0
+	chaine, space := 1, 1
 	// Possibility of wining alignment
 	for i := 0; i < 5; i++ {
 		
@@ -157,13 +171,15 @@ func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, in
 	s[2], t[2] = getLeftTopRightBottomScore(board, alignTable, x, y, player)
 	s[3], t[3] = getRightTopLeftBottomScore(board, alignTable, x, y, player)
 
+	/*
 	for i := 0; i < 4; i++ {
 		fmt.Printf("score: %d time: %d\n", s[i], t[i])
 	}
+//*/
 
 	min, indexmin := 8, 0
 	max, indexmax := 0, 0
-	
+
 	for i, v := range t {
 		if  v < min && v >= 0 {
 			min = v

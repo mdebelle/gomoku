@@ -48,6 +48,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
+		// TODO: Multithreading
 		s := -searchdeeper(&b, &move, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
@@ -78,10 +79,12 @@ func searchdeeper(b *AIBoard, move *Move, alpha, beta int) int {
 	defer func() {b.depth++}()
 
 	if b.depth == 0 {
-		score, quiet := b.Evaluate(move.pos)
+		score, quiet := b.Evaluate(move)
+		//score, quiet := move.Score(), true
 		if (!quiet) {
 			b.depth += 3
 			score = searchdeeper(b, move, alpha, beta)
+			fmt.Println("GROSSE BITE", score)
 			b.depth -= 3
 			return score
 		}

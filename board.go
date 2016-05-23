@@ -16,6 +16,7 @@ type Move struct {
 	aligns			[]AlignScore
 	score			int
 	isWin			bool
+	isForced		bool
 }
 
 type ByScore []Move
@@ -63,17 +64,15 @@ func (this *Move) Evaluate(board *AIBoard) {
 		}
 	}
 
-	//Why ?
-	p_tmp := board.board[this.pos.y][this.pos.x]
-	if p_tmp != 0 { clearAlign(&board.board, &board.alignTable, []Position{this.pos}, p_tmp) }
+	//p_tmp := board.board[this.pos.y][this.pos.x]
+	//if p_tmp != 0 { clearAlign(&board.board, &board.alignTable, []Position{this.pos}, p_tmp) }
 
-	a1, a2, a3, a4 := getScore(&board.alignTable, this.pos.x, this.pos.y, board.player)
-	v1 := a1 + a2 + a3 + a4
-	b1, b2, b3, b4 := getScore(&board.alignTable, this.pos.x, this.pos.y, -board.player)
-	v2 := b1 + b2 + b3 + b4
+	_, a2, _, _ := getBestScore(&board.board, &board.alignTable, this.pos.x, this.pos.y, board.player)
+	v1 := 100 / a2
+	_, b2, _, _ := getBestScore(&board.board, &board.alignTable, this.pos.x, this.pos.y, -board.player)
+	v2 := 100 / b2
 
-	//Why ???
-	if p_tmp != 0 { updateAlign(&board.board, &board.alignTable, this.pos.x, this.pos.y, p_tmp) }
+	//if p_tmp != 0 { updateAlign(&board.board, &board.alignTable, this.pos.x, this.pos.y, p_tmp) }
 
 	if board.capturesNb[board.player + 1] + len(this.captures) >= 10 {
 		this.score = math.MaxInt32
@@ -85,9 +84,9 @@ func (this *Move) Evaluate(board *AIBoard) {
 	//v2 = board.checkAlign(this.pos, -board.player)
 
 	myCaptNb := (board.capturesNb[board.player + 1] + len(this.captures))
-	hisCaptNb :=  board.capturesNb[board.player + 1]
+	hisCaptNb :=  board.capturesNb[-board.player + 1]
 
-	this.score = v1 + v2 + myCaptNb * 2 - hisCaptNb * 2
+	this.score = v1 + v2 + myCaptNb * 15 - hisCaptNb * 15
 }
 
 type AIBoard struct {
@@ -169,23 +168,24 @@ func (board *AIBoard) GetSearchSpace() []Position {
 
 func (this *AIBoard) GetNextMoves(forcedCaptures []Position) []Move {
 	var positions []Position
-	if forcedCaptures != nil {
+	isForced := forcedCaptures != nil
+	if isForced {
 		positions = forcedCaptures
 	} else {
 		positions = this.GetSearchSpace()
 	}
 	moves := make([]Move, 0, len(positions))
 	for _, pos := range(positions) {
-		moves = append(moves, this.CreateMove(pos))
+		moves = append(moves, this.CreateMove(pos, isForced))
 	}
 	sort.Sort(sort.Reverse(ByScore(moves)))
 	return moves
 }
 
-func (this *AIBoard) CreateMove(pos Position) Move {
+func (this *AIBoard) CreateMove(pos Position, isForced bool) Move {
 	captures := make([]Position, 0, 16)
 	getCaptures(&this.board, pos.x, pos.y, this.player, &captures)
-	move := Move{pos, captures, nil, []AlignScore{}, 0, false}
+	move := Move{pos, captures, nil, []AlignScore{}, 0, false, isForced}
 	move.Evaluate(this)
 	return move
 }
@@ -245,7 +245,7 @@ func (this *AIBoard) CanWin(pos Position) bool {
 	return false
 }
 
-func (board *AIBoard) Evaluate(pos Position) (score int, quiet bool) {
+func (board *AIBoard) Evaluate(move *Move) (score int, quiet bool) {
 
 	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
 
@@ -253,8 +253,9 @@ func (board *AIBoard) Evaluate(pos Position) (score int, quiet bool) {
 	// Also check if there is forced captures on this turn
 	// Maybe put a bolean somewhere
 
-	if board.CanWin(pos) {
-		alignType, _ := checkVictory(&board.board, &board.capturesNb, pos.x, pos.y, board.player)
+	// TODO: Already done
+	if board.CanWin(move.pos) {
+		alignType, _ := checkVictory(&board.board, &board.capturesNb, move.pos.x, move.pos.y, board.player)
 		if alignType == winningAlignment {
 			return math.MaxInt32 * 2, true
 		} else if alignType == capturableAlignment {
@@ -266,11 +267,14 @@ func (board *AIBoard) Evaluate(pos Position) (score int, quiet bool) {
 		return math.MaxInt32, true
 	}
 
+	quiet = move.forcedCaptures == nil
+
 	eval := func (x, y int) int {
-		a1, a2, a3, a4 := getScore(&board.alignTable, x, y, board.player)
-		v1 := a1 + a2 + a3 + a4
-		b1, b2, b3, b4 := getScore(&board.alignTable, x, y, -board.player)
-		v2 := b1 + b2 + b3 + b4
+		_, a2, _, _ := getBestScore(&board.board, &board.alignTable, x, y, board.player)
+		v1 := 100 / a2
+		_, b2, _, _ := getBestScore(&board.board, &board.alignTable, x, y, -board.player)
+		v2 := 100 / b2
+
 		return v1 - v2
 	}
 
@@ -283,7 +287,7 @@ func (board *AIBoard) Evaluate(pos Position) (score int, quiet bool) {
 		score += eval(pos.x, pos.y)
 	}
 
-	return score + board.MyCapturesNb() * 2 - board.HisCapturesNb() * 2, true
+	return score + board.MyCapturesNb() * 100 - board.HisCapturesNb() * 100, quiet
 }
 
 /*

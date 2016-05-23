@@ -23,10 +23,10 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 		for i:= 0; i < 4; i++ {
 			if !lock1 && isInBounds(x+(i*incx), y+(i*incy)) {
 				if ((axe1 >> uint(i)) & 1) == 1 {
-					if (j1 % 2 == 0) { j1++ }
+					if (j1 % 2 != 0) { j1++ }
 					t1[j1]++
 				} else  {
-					if (j1 % 2 != 0) { j1++ }
+					if (j1 % 2 == 0) { j1++ }
 					if board[y+(i*incy)][x+(i*incx)] == 0 {
 						t1[j1]++
 					} else {
@@ -36,10 +36,10 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 			}
 			if !lock2 && isInBounds(x-(i*incx), y-(i*incy)) {
 				if ((axe2 >> uint(i)) & 1) == 1 {
-					if (j2 % 2 == 0) { j2++ }
+					if (j2 % 2 != 0) { j2++ }
 					t2[j2]++
 				} else {
-					if (j2 % 2 != 0) { j2++ }
+					if (j2 % 2 == 0) { j2++ }
 					if board[y-(i*incy)][x-(i*incx)] == empty {
 						t2[j2]++
 					} else {
@@ -55,8 +55,8 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 	// Possibility of wining alignment
 	for i := 0; i < 5; i++ {
 		
-		if  i % 2 == 1 {
-			chaine += t1[i] + t2[i]
+		if i % 2 == 0 {
+			chaine += (t1[i] + t2[i])
 			if chaine + space >= 5 {
 				return axe1+axe2, space
 			}
@@ -71,7 +71,7 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 						return axe1+axe2, space + t2[i]
 					}
 				}
-				space += t1[i]+t2[i]
+				space += (t1[i]+t2[i])
 			}
 		}
 	}

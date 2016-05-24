@@ -332,7 +332,7 @@ func run() int {
 		if player_mode > 0 {
 			_ = renderer.SetDrawColor(236, 240, 241, 0)
 			renderer.Clear()
-			drawClic(renderer, &values, &capture, &freeThrees)
+			drawClic(renderer, &values, &capture, forcedCaptures, &freeThrees)
 			if player == 0 {
 				drawRestartPanel(renderer)
 			}
@@ -340,7 +340,7 @@ func run() int {
 			if debug == true {
 				_ = rendererb.SetDrawColor(236, 240, 241, 0)
 				rendererb.Clear()
-				drawClic(rendererb, &values, &capture, &freeThrees)
+				drawClic(rendererb, &values, &capture, forcedCaptures, &freeThrees)
 				draweval(rendererb, &better)
 				rendererb.Present()
 			}

@@ -54,7 +54,7 @@ func (this *Move) Evaluate(board *AIBoard) {
 	if board.CanWin(this.pos) {
 		alignType, forcedCaptures := checkVictory(&board.board, &board.capturesNb, this.pos.x, this.pos.y, board.player)
 		if alignType == winningAlignment {
-			this.score = math.MaxInt32
+			this.score = math.MaxInt32 * 2 - board.depth
 			this.isWin = true
 			return
 		} else if alignType == capturableAlignment {
@@ -257,7 +257,7 @@ func (board *AIBoard) Evaluate(move *Move) (score int, quiet bool) {
 	if board.CanWin(move.pos) {
 		alignType, _ := checkVictory(&board.board, &board.capturesNb, move.pos.x, move.pos.y, board.player)
 		if alignType == winningAlignment {
-			return math.MaxInt32 * 2, true
+			return math.MaxInt32 * 2 - board.depth, true
 		} else if alignType == capturableAlignment {
 			return math.MaxInt32, false
 		}

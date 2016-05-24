@@ -29,7 +29,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 	var	ax, ay int
 	var boardData BoardData
 
-	b := NewAIBoard(values, freeThree, alignTable, capture, player, depth)
+	b := NewAIBoard(values, freeThree, alignTable, capture, player, 0)
 
 	moves := b.GetNextMoves(forcedCaptures)
 
@@ -49,7 +49,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
 		// TODO: Multithreading
-		s := -searchdeeper(&b, &move, -beta, -alpha)
+		s := -searchdeeper(&b, &move, depth - 1, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
@@ -70,25 +70,26 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 	return ax, ay, boardData
 }
 
-func searchdeeper(b *AIBoard, move *Move, alpha, beta int) int {
+func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 
 	nodesSearched++
 	bestscore := math.MinInt32
 
-	b.depth--
-	defer func() {b.depth++}()
+	b.depth++
+	defer func() {b.depth--}()
 
-	if b.depth == 0 {
-		score, quiet := b.Evaluate(move)
-		//score, quiet := move.Score(), true
+	if depth == 0 {
+		//score, quiet := b.Evaluate(move)
+		score, quiet := move.Score(), true
 		if (!quiet) {
-			b.depth += 3
-			score = searchdeeper(b, move, alpha, beta)
-			//fmt.Println("GROSSE BITE", score)
-			b.depth -= 3
-			return score
+			fmt.Println("Not quiet", b.depth)
+			//depth += 2
+			//score = -searchdeeper(b, move, 1, alpha, beta)
+			//fmt.Println(-score)
+			return -score
+		} else {
+			return -score
 		}
-		return -score
 	}
 
 	b.SwitchPlayer()
@@ -101,7 +102,7 @@ func searchdeeper(b *AIBoard, move *Move, alpha, beta int) int {
 			return move.Score()
 		}
 		b.DoMove(move)
-		s := -searchdeeper(b, &move, -beta, -alpha)
+		s := -searchdeeper(b, &move, depth - 1, -beta, -alpha)
 		b.UndoMove(move)
 
 		if s >= beta {

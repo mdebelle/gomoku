@@ -6,20 +6,32 @@ import (
 )
 
 type TextDrawer struct {
-	font		*ttf.Font
+	fonts		map[int]*ttf.Font
 	color		sdl.Color
 }
 
 func NewTextDrawer() *TextDrawer {
-	font, err := ttf.OpenFont("/Library/Fonts/Arial Black.ttf", 20)
-	if err != nil {
-		panic(err)
-	}
-	return &TextDrawer{font, sdl.Color{0, 0, 0, 255}}
+	fontMap := make(map[int]*ttf.Font)
+	return &TextDrawer{fontMap, sdl.Color{0, 0, 0, 255}}
 }
 
-func (this *TextDrawer) Draw(renderer *sdl.Renderer, test string, w, h int) {
-	surface, err := this.font.RenderUTF8_Blended(test, this.color)
+func (this *TextDrawer) GetFont(size int) *ttf.Font {
+	font := this.fonts[size]
+	if font == nil {
+		newFont, err := ttf.OpenFont("/Library/Fonts/Arial Black.ttf", size)
+		if err != nil {
+			panic(err)
+		}
+		this.fonts[size] = newFont
+		font = newFont
+	}
+	return font
+}
+
+func (this *TextDrawer) Draw(renderer *sdl.Renderer, test string, w, h, size int) {
+	font := this.GetFont(size)
+
+	surface, err := font.RenderUTF8_Blended(test, this.color)
 	if err != nil { panic(err) }
 
 	tex, err := renderer.CreateTextureFromSurface(surface)
@@ -36,5 +48,7 @@ func (this *TextDrawer) Draw(renderer *sdl.Renderer, test string, w, h int) {
 }
 
 func (this *TextDrawer) Dispose() {
-	this.font.Close()
+	for _, font := range this.fonts {
+		font.Close()
+	}
 }

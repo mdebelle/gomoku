@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/23 18:35:17 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/23 19:07:57 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/24 15:47:53 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -109,11 +109,12 @@ func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, in
 	s[2], t[2] = winingAlignement(board, applikmask(0x000f0000, 16), applikmask(0x00f00000, 20), x, y, -1, -1, player)
 	s[3], t[3] = winingAlignement(board, applikmask(0x0f000000, 24), applikmask(0xf0000000, 28), x, y, 1, -1, player)
 
+	/*
 	fmt.Printf("---\n")
 	for i := 0; i < 4; i++ {
 		fmt.Printf("score: %d time: %d\n", s[i], t[i])
 	}
-//
+	//*/
 
 	min, indexmin := 8, 0
 	max, indexmax := 0, 0

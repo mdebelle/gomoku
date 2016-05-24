@@ -25,8 +25,8 @@ func drawPanel(renderer *sdl.Renderer) {
 	_ = renderer.FillRect(&sdl.Rect{0, 0, 800, 880})
 	_ = renderer.SetDrawColor(149, 165, 166, 255)
 	_ = renderer.FillRect(&sdl.Rect{10, 400, 780, 80})
-	textDrawer.Draw(renderer, "Payer vs Computer Press 1", 400, 420)
-	textDrawer.Draw(renderer, "Payer vs Player Press 2", 400, 450)
+	textDrawer.Draw(renderer, "Payer vs Computer Press 1", 400, 420, 30)
+	textDrawer.Draw(renderer, "Payer vs Player Press 2", 400, 450, 30)
 	renderer.Present()
 
 }
@@ -35,8 +35,8 @@ func drawRestartPanel(renderer *sdl.Renderer) {
 	
 	_ = renderer.SetDrawColor(149, 165, 166, 255)
 	_ = renderer.FillRect(&sdl.Rect{10, 400, 780, 80})
-	textDrawer.Draw(renderer, "Start Again Press a", 400, 420)
-	textDrawer.Draw(renderer, "Quit Press q", 400, 450)
+	textDrawer.Draw(renderer, "Start Again Press a", 400, 420, 30)
+	textDrawer.Draw(renderer, "Quit Press q", 400, 450, 30)
 
 
 }
@@ -118,12 +118,12 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 			drawDoubleFree(i, j, player_two)
 		}
 	}
-	textDrawer.Draw(renderer, strconv.Itoa(capture[0]), 484, 790)
+	textDrawer.Draw(renderer, strconv.Itoa(capture[0]), 484, 790, 20)
 	_ = renderer.SetDrawColor(231, 76, 60, 255)
 	for i := 0; i < capture[0]; i++ {
 		_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 10), int32(800 - 10), 20, 20})
 	}
-	textDrawer.Draw(renderer, strconv.Itoa(capture[2]), 484, 830)
+	textDrawer.Draw(renderer, strconv.Itoa(capture[2]), 484, 830, 20)
 	_ = renderer.SetDrawColor(52, 152, 219, 255)
 	for i := 0; i < capture[2]; i++ {
 		_ = renderer.FillRect(&sdl.Rect{int32((i+1)*40 - 10), int32(840 - 10), 20, 20})
@@ -187,19 +187,19 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 
 			if values[j][i][6] != 0 {
 				if (values[j][i][5] > 2e9) {
-					textDrawer.Draw(renderer, "∞", (i + 1) * 40, (j + 1) * 40)
+					textDrawer.Draw(renderer, "oo", (i + 1) * 40, (j + 1) * 40, 15)
 				} else if (values[j][i][5] < -2e9) {
-					textDrawer.Draw(renderer, "-∞", (i + 1) * 40, (j + 1) * 40)
+					textDrawer.Draw(renderer, "-oo", (i + 1) * 40, (j + 1) * 40, 15)
 				} else {
-					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][5]), (i + 1) * 40, (j + 1) * 40)
+					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][5]), (i + 1) * 40, (j + 1) * 40, 15)
 				}
 				
 				if (values[j][i][7] > 2e9) {
-					textDrawer.Draw(renderer, "∞", (i + 1) * 40 + 10, (j + 1) * 40 + 10)
+					textDrawer.Draw(renderer, "oo", (i + 1) * 40 + 10, (j + 1) * 40 + 10, 15)
 				} else if (values[j][i][7] < -2e9) {
-					textDrawer.Draw(renderer, "-∞", (i + 1) * 40 + 10, (j + 1) * 40 + 10)
+					textDrawer.Draw(renderer, "-oo", (i + 1) * 40 + 10, (j + 1) * 40 + 10, 15)
 				} else {
-					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][7]), (i + 1) * 40 + 10, (j + 1) * 40 + 10)
+					textDrawer.Draw(renderer, strconv.Itoa(values[j][i][7]), (i + 1) * 40 + 10, (j + 1) * 40 + 10, 15)
 				}
 			}
 		}

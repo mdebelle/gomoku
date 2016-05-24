@@ -22,9 +22,9 @@ func printAlignments(b *AIBoard) {
 
 func multisearch(b *AIBoard, move *Move, alpha, beta int, c chan int) {
 
-	s := -searchdeeper(b, move, 5, alpha, beta)
+	s := -searchdeeper(b, move, 5 - 1, alpha, beta)
 	c <- s	
-	fmt.Printf("||move[%d][%d], %d\n", move.pos.y, move.pos.x, s)
+//	fmt.Printf("||move[%d][%d], %d\n", move.pos.y, move.pos.x, s)
 }
 
 func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
@@ -61,8 +61,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
-		// TODO: Multithreading
-		fmt.Printf("%d//%v\n", i, move)
+		//fmt.Printf("%d//%v\n", i, move)
 		var move2 = move
 		var b2 = b
 
@@ -87,7 +86,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 
 	for i:= 0; i < len(moves); i++ {
 		s := <-chans[i]
-		fmt.Printf("move[%d][%d], %d\n", moves[i].pos.y, moves[i].pos.x, s)
+		//fmt.Printf("move[%d][%d], %d\n", moves[i].pos.y, moves[i].pos.x, s)
 		boardData[moves[i].pos.y][moves[i].pos.x][5] = s
 		if s >= beta {
 			return moves[i].pos.x, moves[i].pos.y, boardData

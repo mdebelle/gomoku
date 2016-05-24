@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/24 17:34:39 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/24 19:13:43 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -110,6 +110,15 @@ func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]i
 //	fmt.Printf("best[%d,%d] worst[%d,%d]\n", a,b,c,d)
 	updateAlign(board, alignTable, x, y, player)
 	board[y][x] = player
+	captures := make([]Position, 0, 16)
+
+	getCaptures(board, x, y, player, &captures)
+	doCaptures(board, &captures)
+	capturesNb[player + 1] += len(captures)
+	if capturesNb[player + 1] >= 10 {
+		return winByCapture, nil
+	}
+
 	alignmentType, forcedCaptures := checkVictory(board, capturesNb, x, y, player)
 	switch alignmentType {
 	case winningAlignment:
@@ -117,14 +126,8 @@ func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]i
 	case regularAlignment:
 		forcedCaptures = nil
 	}
-	captures := make([]Position, 0, 16)
-	getCaptures(board, x, y, player, &captures)
-	doCaptures(board, &captures)
-	capturesNb[player + 1] += len(captures)
+
 	updateFreeThrees(board, freeThrees, x, y, player, captures)
-	if capturesNb[player + 1] >= 10 {
-		return winByCapture, nil
-	}
 	return regularMove, forcedCaptures
 }
 

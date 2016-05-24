@@ -83,10 +83,10 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 		score, quiet := move.Score(), true
 		if (!quiet) {
 			fmt.Println("Not quiet", b.depth)
-			//depth += 2
+			depth += 2
 			//score = -searchdeeper(b, move, 1, alpha, beta)
 			//fmt.Println(-score)
-			return -score
+			//return -score
 		} else {
 			return -score
 		}

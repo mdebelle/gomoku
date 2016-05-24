@@ -42,7 +42,7 @@ func drawRestartPanel(renderer *sdl.Renderer) {
 }
 
 
-func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees *[2]Board) {
+func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, lstCaptures []Position, freeThrees *[2]Board, searchTime int) {
 
 	dr := func (x, y, lenx, leny int, vertical bool) {
 		if (!vertical) {
@@ -132,10 +132,18 @@ func drawClic(renderer *sdl.Renderer, values *Board, capture *[3]int, freeThrees
 	// TODO: Display forced captures
 	/*
 	if (victory.Todo == true) {
-		_ = renderer.SetDrawColor(220, 32, 220, 255)
+		
 		_ = renderer.FillRect(&sdl.Rect{int32((victory.X+1)*40 - 10), int32((victory.Y+1)*40 - 10), 20, 20})
 	}
-*/
+	*/
+	_ = renderer.SetDrawColor(220, 32, 220, 255)
+	for i := 0; i < len(lstCaptures); i++ {
+		_ = renderer.FillRect(&sdl.Rect{int32((lstCaptures[i].x+1)*40 - 10), int32((lstCaptures[i].y+1)*40 - 10), 20, 20})
+	}
+
+	t := searchTime / 1000000
+	textDrawer.Draw(renderer, strconv.Itoa(t), 400, 20, 20)
+
 }
 
 func draweval(renderer *sdl.Renderer, values *BoardData) {

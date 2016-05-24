@@ -160,6 +160,7 @@ func run() int {
 		running			bool
 		err				error
 		player_mode		int
+		searchTime		time.Duration
 	)
 
 	var (
@@ -314,7 +315,9 @@ func run() int {
 		if player_mode == 1 && player == player_two {
 
 			var x, y int
+			startTime := time.Now()
 			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture, forcedCaptures)
+			searchTime = time.Since(startTime)
 			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 			log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
 			fmt.Println(forcedCaptures)
@@ -336,7 +339,7 @@ func run() int {
 		if player_mode > 0 {
 			_ = renderer.SetDrawColor(236, 240, 241, 0)
 			renderer.Clear()
-			drawClic(renderer, &values, &capture, &freeThrees)
+			drawClic(renderer, &values, &capture, forcedCaptures, &freeThrees, int(searchTime))
 			if player == 0 {
 				drawRestartPanel(renderer)
 			}
@@ -344,7 +347,7 @@ func run() int {
 			if debug == true {
 				_ = rendererb.SetDrawColor(236, 240, 241, 0)
 				rendererb.Clear()
-				drawClic(rendererb, &values, &capture, &freeThrees)
+				drawClic(rendererb, &values, &capture, forcedCaptures, &freeThrees, int(searchTime))
 				draweval(rendererb, &better)
 				rendererb.Present()
 			}

@@ -22,9 +22,9 @@ func printAlignments(b *AIBoard) {
 
 func multisearch(b *AIBoard, move *Move, alpha, beta int, c chan int) {
 
-	s := -searchdeeper(b, move, 5 - 1, alpha, beta)
-	c <- s	
-//	fmt.Printf("||move[%d][%d], %d\n", move.pos.y, move.pos.x, s)
+	s := -searchdeeper(b, move, 1, alpha, beta)
+	fmt.Printf("||move[%d][%d], %d\n", move.pos.y, move.pos.x, s)
+	c <- s
 }
 
 func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
@@ -46,13 +46,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 	alpha := math.MinInt32
 	beta := math.MaxInt32
 
-	var chans []chan int
-
-	for i := 0; i < len(moves); i++ {
-		chans = append(chans, make(chan int))
-	}
-
-	for i, move := range(moves) {
+	for _, move := range(moves) {
 		boardData[move.pos.y][move.pos.x][6] = 1
 		boardData[move.pos.y][move.pos.x][7] = move.score
 		if move.IsWin() {
@@ -61,40 +55,19 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
-		//fmt.Printf("%d//%v\n", i, move)
-		var move2 = move
-		var b2 = b
-
-		go multisearch(&b2, &move2, -beta, -alpha, chans[i])
-//		s := -searchdeeper(&b, &move, -beta, -alpha)
-//		boardData[move.pos.y][move.pos.x][5] = s
+		// TODO: Multithreading
+		s := -searchdeeper(&b, &move, depth - 1, -beta, -alpha)
+		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
 
-		// if s >= beta {
-		// 	return move.pos.x, move.pos.y, boardData
-		// }
-
-		// if s > bestscore {
-		// 	bestscore = s
-		// 	ax, ay = move.pos.x, move.pos.y
-		// 	if s > alpha {
-		// 		alpha = s
-		// 	}
-		// }
-	}
-
-	for i:= 0; i < len(moves); i++ {
-		s := <-chans[i]
-		//fmt.Printf("move[%d][%d], %d\n", moves[i].pos.y, moves[i].pos.x, s)
-		boardData[moves[i].pos.y][moves[i].pos.x][5] = s
 		if s >= beta {
-			return moves[i].pos.x, moves[i].pos.y, boardData
+			return move.pos.x, move.pos.y, boardData
 		}
 
 		if s > bestscore {
 			bestscore = s
-			ax, ay = moves[i].pos.x, moves[i].pos.y
+			ax, ay = move.pos.x, move.pos.y
 			if s > alpha {
 				alpha = s
 			}
@@ -113,17 +86,19 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 	defer func() {b.depth--}()
 
 	if depth == 0 {
-		//score, quiet := b.Evaluate(move)
-		score, quiet := move.Score(), true
+		//*
+		score := move.Score()
+		return score
+		/*/
+		score, quiet := b.Evaluate(move)
 		if (!quiet) {
-			//fmt.Println("Not quiet", b.depth)
-			//depth += 2
-			//score = -searchdeeper(b, move, 1, alpha, beta)
-			//fmt.Println(-score)
-			return -score
+			depth += 2
 		} else {
 			return -score
 		}
+		//*/
+	} else if depth == 2 {
+		return bestLeaf(b, move, depth, alpha, beta)
 	}
 
 	b.SwitchPlayer()
@@ -150,5 +125,53 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 			}
 		}
 	}
+	return bestscore
+}
+
+func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
+
+	bestscore := math.MinInt32
+
+	b.SwitchPlayer()
+	defer b.SwitchPlayer()
+
+	moves := b.GetNextMoves(move.forcedCaptures)
+
+	var chans []chan int
+
+	for i := 0; i < len(moves); i++ {
+		chans = append(chans, make(chan int))
+	}
+
+	fmt.Println("MOVES:", len(moves))
+	defer func(){fmt.Println("---QUIT---")}()
+
+	for i, move := range(moves) {
+		if move.IsWin() {
+			return move.Score()
+		}
+		b.DoMove(move)
+
+		var move2 = move
+		var b2 = *b
+		go multisearch(&b2, &move2, -beta, -alpha, chans[i])
+		b.UndoMove(move)
+	}
+
+	for i:= 0; i < len(moves); i++ {
+		s := <-chans[i]
+		fmt.Println("caca", s);
+		if s >= beta {
+			return s
+		}
+
+		if s > bestscore {
+			bestscore = s
+			if s > alpha {
+				alpha = s
+			}
+		}
+	}
+
 	return bestscore
 }

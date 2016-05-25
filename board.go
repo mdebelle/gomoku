@@ -49,7 +49,7 @@ func (this *Move) Evaluate(board *AIBoard) {
 
 	if debug { defer timeFunc(time.Now(), "evaluateMove") }
 
-	// TODO: Do captures before evaluating
+	// TODO: Do captures before evaluating victory
 
 	if board.CanWin(this.pos) {
 		alignType, forcedCaptures := checkVictory(&board.board, &board.capturesNb, this.pos.x, this.pos.y, board.player)
@@ -86,10 +86,12 @@ func (this *Move) Evaluate(board *AIBoard) {
 	myCaptNb := (board.capturesNb[board.player + 1] + len(this.captures))
 	hisCaptNb :=  board.capturesNb[-board.player + 1]
 
+	/*
 	if board.depth == 0 {
-//		fmt.Printf("[%v] => %d (%d %d) - %d (%d %d)\n", this.pos, v1, a1, a2, v2, b1, b2)
-//		fmt.Println(move, v1, "(", a1, a2, ")", v2, )
+		fmt.Printf("[%v] => %d (%d %d) - %d (%d %d)\n", this.pos, v1, a1, a2, v2, b1, b2)
 	}
+*/
+
 	this.score = v1 + v2 + myCaptNb * 3 - hisCaptNb * 3
 }
 
@@ -172,7 +174,7 @@ func (board *AIBoard) GetSearchSpace() []Position {
 
 func (this *AIBoard) GetNextMoves(forcedCaptures []Position) []Move {
 	var positions []Position
-	isForced := forcedCaptures != nil
+	isForced := forcedCaptures != nil && len(forcedCaptures) > 0
 	if isForced {
 		positions = forcedCaptures
 	} else {

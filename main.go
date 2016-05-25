@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/25 17:29:56 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/25 20:20:21 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -108,13 +108,20 @@ func canPlay(board *Board, freeThrees *[2]Board, forcedCaptures []Position, x, y
 func checkRules(board *Board, freeThrees, alignTable *[2]Board, capturesNb *[3]int, x, y, player int) (MoveType, []Position) {
 //	a,b,c,d := getBestScore(board, alignTable, x, y, player)
 //	fmt.Printf("best[%d,%d] worst[%d,%d]\n", a,b,c,d)
-	updateAlign(board, alignTable, x, y, player)
 	board[y][x] = player
 	captures := make([]Position, 0, 16)
 
 	getCaptures(board, x, y, player, &captures)
 	doCaptures(board, &captures)
 	capturesNb[player + 1] += len(captures)
+
+	updateAlign(board, alignTable, x, y, player)
+	if len(captures) != 0 {
+//		fmt.Println("------------Yes------------")
+//		printAlignments(values)
+		clearAlign(board, alignTable, captures, -player)
+//		printAlignments(values)
+	}
 	if capturesNb[player + 1] >= 10 {
 		return winByCapture, nil
 	}
@@ -172,7 +179,7 @@ func run() int {
 		better			BoardData
 		forcedCaptures	[]Position = nil
 	)
-	
+
 	// Log Module
 	f, err := os.OpenFile("testlogfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
 	if err != nil {

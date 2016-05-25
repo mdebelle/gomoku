@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/23 18:35:17 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/25 17:12:25 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/25 19:52:28 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -25,8 +25,8 @@ var fmt_debug = fmt.Println
 func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (int, int){
 
 	// AlignementGagnant
-	if axe1 == 15 || axe2 == 15 || (axe1 == 14 && axe2 >= 8) || (axe2 == 14 && axe1 >= 8) || (axe1 >= 12 && axe2 >= 12) {
-		return math.MaxInt32, 1
+	if axe1 == 15 || axe2 == 15 || (axe1 >= 14 && axe2 >= 8) || (axe2 >= 14 && axe1 >= 8) || (axe1 >= 12 && axe2 >= 12) {
+		return math.MaxInt32, 0
 	}
 
 	var t1, t2 [5]int
@@ -106,8 +106,8 @@ func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, in
 
 	s[0], t[0] = winingAlignement(board, applikmask(0x0000000f, 0), applikmask(0x000000f0, 4), x, y, -1, 0, player)
 	s[1], t[1] = winingAlignement(board, applikmask(0x00000f00, 8), applikmask(0x0000f000, 12), x, y, 0, -1, player)
-	s[2], t[2] = winingAlignement(board, applikmask(0x000f0000, 16), applikmask(0x00f00000, 20), x, y, -1, -1, player)
-	s[3], t[3] = winingAlignement(board, applikmask(0x0f000000, 24), applikmask(0xf0000000, 28), x, y, 1, -1, player)
+	s[2], t[2] = winingAlignement(board, applikmask(0x000f0000, 16), applikmask(0x00f00000, 20), x, y, 1, -1, player)
+	s[3], t[3] = winingAlignement(board, applikmask(0x0f000000, 24), applikmask(0xf0000000, 28), x, y, -1, -1, player)
 
 	min, indexmin := 8, 0
 	max, indexmax := 0, 0
@@ -122,9 +122,8 @@ func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, in
 			indexmax = i
 		}
 	}
-	indexmin++
 	indexmax++
-	return s[0] + s[1] + s[2] + s[3], t[0], 0, 0
+	return s[0] + s[1] + s[2] + s[3], t[indexmin] + 1, 0, 0
 //	return s[indexmin], t[indexmin], s[indexmax], t[indexmax]
 }
 

@@ -8,12 +8,12 @@ import (
 
 var nodesSearched = 0
 
-func printAlignments(b *AIBoard) {
+func printAlignments(alignTable *[2]Board) {
 	for y := 0; y < 19; y++ {
 		for x := 0; x < 19; x++ {
-			a, e, c, d := getScore(&b.alignTable, x, y, player_one)
+			a, e, c, d := getScore(alignTable, x, y, player_one)
 			fmt.Printf("[%v ", a + e + c + d)
-			a, e, c, d = getScore(&b.alignTable, x, y, player_two)
+			a, e, c, d = getScore(alignTable, x, y, player_two)
 			fmt.Printf("%v]", a + e + c + d)
 		}
 		fmt.Println()
@@ -84,22 +84,11 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 	defer func() {b.depth--}()
 
 	if depth == 0 {
-		//*
-		//move.Evaluate(b)
-		score := move.Score()
-		return -score
-		/*/
-		score, quiet := b.Evaluate(move)
-		if (!quiet) {
-			depth += 2
-		} else {
-			return -score
+		if move.isForced {
+			return math.MaxInt32
 		}
-		//*/
-
-	} /*else if depth == 1 {
-		return bestLeaf(b, move, depth - 1, -beta, -alpha)
-	} //*/
+		return -move.Score()
+	}
 
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()

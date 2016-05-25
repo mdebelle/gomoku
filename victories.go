@@ -105,7 +105,9 @@ func checkVictory(board *Board, capturesNb *[3]int, x, y, player int) (Alignment
 	getPossibleCounterCaptures := func () {
 		for y := 0; y < 19; y++ {
 			for x := 0; x < 19; x++ {
-				testCapturability(x, y, &captures)
+				if board[y][x] == player {
+					testCapturability(x, y, &captures)
+				}
 			}
 		}
 	}

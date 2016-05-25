@@ -214,6 +214,9 @@ func run() int {
 	}
 	defer renderer.Destroy()
 
+
+	testGame := []Position{}
+
 	// Debug Window
 	var (
 		debug		bool
@@ -224,6 +227,7 @@ func run() int {
 	player = 1
 	running = true
 
+	testinc := 0
 	// loop
 	for running {
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -238,7 +242,7 @@ func run() int {
 					fmt.Printf("Player -> x[%d] y [%d]\n", px, py)
 					log.Printf("p1 -> X |%3d| Y|%3d|\n", px, py)
 					if canPlay(&values, &freeThrees, forcedCaptures, px, py, player) {
-
+						if testinc < len(testGame)-1 { testinc++ }
 						moveType, newForcedCaptures := checkRules(&values, &freeThrees, &alignTable, &capture, px, py, player)
 						forcedCaptures = newForcedCaptures
 						if moveType != regularMove {
@@ -342,6 +346,7 @@ func run() int {
 			if player == 0 {
 				drawRestartPanel(renderer)
 			}
+			if len(testGame) > 0 {drawTestGame(renderer, testGame[testinc])}
 			renderer.Present()
 			if debug == true {
 				_ = rendererb.SetDrawColor(236, 240, 241, 0)

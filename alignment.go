@@ -78,11 +78,11 @@ func winingAlignement(board *Board, axe1, axe2, x, y, incx, incy, player int) (i
 			if i < 4 {
 				if t1[i] < t2[i] {
 					if chaine + space + t1[i] + t1[i+1] >= 5 {
-						return axe1+axe2, space + t1[i]
+						return axe1+axe2, (5-(chaine+t1[i+1]))
 					}
 				} else { 
 					if chaine + space + t2[i] + t2[i+1] >= 5 {
-						return axe1+axe2, space + t2[i]
+						return axe1+axe2, (5-(chaine+t2[i+1]))
 					}
 				}
 				space += (t1[i]+t2[i])

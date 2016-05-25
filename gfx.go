@@ -213,3 +213,12 @@ func draweval(renderer *sdl.Renderer, values *BoardData) {
 		}
 	}
 }
+
+
+func drawTestGame(renderer *sdl.Renderer, p Position) {
+
+	renderer.SetDrawColor(46, 204, 113, 255)
+	renderer.FillRect(&sdl.Rect{int32((p.x+1)*40 - 5), int32((p.y+1)*40 - 5), 10, 10})
+
+}
+

@@ -67,10 +67,10 @@ func (this *Move) Evaluate(board *AIBoard) {
 	//p_tmp := board.board[this.pos.y][this.pos.x]
 	//if p_tmp != 0 { clearAlign(&board.board, &board.alignTable, []Position{this.pos}, p_tmp) }
 
-	_, a2, _, _ := getBestScore(&board.board, &board.alignTable, this.pos.x, this.pos.y, board.player)
-	v1 := 100 / a2
-	_, b2, _, _ := getBestScore(&board.board, &board.alignTable, this.pos.x, this.pos.y, -board.player)
-	v2 := 100 / b2
+	a1, a2, _, _ := getBestScore(&board.board, &board.alignTable, this.pos.x, this.pos.y, board.player)
+	v1 := a1 / a2
+	b1, b2, _, _ := getBestScore(&board.board, &board.alignTable, this.pos.x, this.pos.y, -board.player)
+	v2 := b1 / b2
 
 	//if p_tmp != 0 { updateAlign(&board.board, &board.alignTable, this.pos.x, this.pos.y, p_tmp) }
 
@@ -86,7 +86,11 @@ func (this *Move) Evaluate(board *AIBoard) {
 	myCaptNb := (board.capturesNb[board.player + 1] + len(this.captures))
 	hisCaptNb :=  board.capturesNb[-board.player + 1]
 
-	this.score = v1 + v2 + myCaptNb * 15 - hisCaptNb * 15
+	if board.depth == 0 {
+//		fmt.Printf("[%v] => %d (%d %d) - %d (%d %d)\n", this.pos, v1, a1, a2, v2, b1, b2)
+//		fmt.Println(move, v1, "(", a1, a2, ")", v2, )
+	}
+	this.score = v1 + v2 + myCaptNb * 3 - hisCaptNb * 3
 }
 
 type AIBoard struct {

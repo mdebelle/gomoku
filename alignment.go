@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/23 18:35:17 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/24 15:47:53 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/25 17:12:25 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -122,7 +122,10 @@ func getBestScore(board *Board, alignTable *[2]Board, x, y, player int) (int, in
 			indexmax = i
 		}
 	}
-	return s[indexmin], t[indexmin], s[indexmax], t[indexmax]
+	indexmin++
+	indexmax++
+	return s[0] + s[1] + s[2] + s[3], t[0], 0, 0
+//	return s[indexmin], t[indexmin], s[indexmax], t[indexmax]
 }
 
 

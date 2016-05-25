@@ -45,6 +45,7 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 	beta := math.MaxInt32
 
 	for _, move := range(moves) {
+//		fmt.Println(move)
 		boardData[move.pos.y][move.pos.x][6] = 1
 		boardData[move.pos.y][move.pos.x][7] = move.score
 		if move.IsWin() {
@@ -53,7 +54,6 @@ func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth 
 
 		b.DoMove(move)
 		b.UpdateFreeThrees(move.pos, move.captures)
-		// TODO: Multithreading
 		s := -searchdeeper(&b, &move, depth - 1, -beta, -alpha)
 		boardData[move.pos.y][move.pos.x][5] = s
 		b.UndoMove(move)
@@ -97,8 +97,8 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 		}
 		//*/
 
-	} else if depth == 1 {
-		return bestLeaf(b, move, depth, alpha, beta)
+	} /*else if depth == 1 {
+		return bestLeaf(b, move, depth - 1, -beta, -alpha)
 	} //*/
 
 	b.SwitchPlayer()
@@ -160,11 +160,11 @@ func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
 
 		s := m.Score()
 
-		/*
+		//*
 		if s >= beta {
 			return s
 		}
-*/
+		//*/
 
 		if s > bestscore {
 			bestscore = s

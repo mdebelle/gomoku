@@ -22,8 +22,16 @@ func printAlignments(b *AIBoard) {
 
 func multisearch(b *AIBoard, move *Move, alpha, beta int, c chan int) {
 
+	alpha = -math.MaxInt32
+	beta = math.MaxInt32
+
 	s := -searchdeeper(b, move, 1, alpha, beta)
+	/*
+	fmt.Println("-----------------")
+	fmt.Println(b.board)
+	fmt.Println("Score: ", move.Score())
 	fmt.Printf("||move[%d][%d], %d\n", move.pos.y, move.pos.x, s)
+	//*/
 	c <- s
 }
 
@@ -87,8 +95,9 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 
 	if depth == 0 {
 		//*
+		//move.Evaluate(b)
 		score := move.Score()
-		return score
+		return -score
 		/*/
 		score, quiet := b.Evaluate(move)
 		if (!quiet) {
@@ -143,9 +152,6 @@ func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
 		chans = append(chans, make(chan int))
 	}
 
-	fmt.Println("MOVES:", len(moves))
-	defer func(){fmt.Println("---QUIT---")}()
-
 	for i, move := range(moves) {
 		if move.IsWin() {
 			return move.Score()
@@ -160,7 +166,6 @@ func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
 
 	for i:= 0; i < len(moves); i++ {
 		s := <-chans[i]
-		fmt.Println("caca", s);
 		if s >= beta {
 			return s
 		}
@@ -173,5 +178,41 @@ func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
 		}
 	}
 
+	return bestscore
+}
+
+func searchdeeper2(b *AIBoard, move *Move, depth, alpha, beta int) int {
+
+	nodesSearched++
+	bestscore := math.MinInt32
+
+	b.depth++
+	defer func() {b.depth--}()
+
+	b.SwitchPlayer()
+	defer b.SwitchPlayer()
+
+	moves := b.GetNextMoves(move.forcedCaptures)
+
+	for _, move := range(moves) {
+		if move.IsWin() {
+			return move.Score()
+		}
+		b.DoMove(move)
+//		s := -move.Score()
+		s := -searchdeeper(b, &move, depth - 1, -beta, -alpha)
+		b.UndoMove(move)
+
+		if s >= beta {
+			return s
+		}
+
+		if s > bestscore {
+			bestscore = s
+			if s > alpha {
+				alpha = s
+			}
+		}
+	}
 	return bestscore
 }

@@ -20,19 +20,9 @@ func printAlignments(b *AIBoard) {
 	}
 }
 
-func multisearch(b *AIBoard, move *Move, alpha, beta int, c chan int) {
-
-	alpha = -math.MaxInt32
-	beta = math.MaxInt32
-
-	s := -searchdeeper(b, move, 1, alpha, beta)
-	/*
-	fmt.Println("-----------------")
-	fmt.Println(b.board)
-	fmt.Println("Score: ", move.Score())
-	fmt.Printf("||move[%d][%d], %d\n", move.pos.y, move.pos.x, s)
-	//*/
-	c <- s
+func multisearch(b *AIBoard, pos *Position, c chan Move) {
+	m := b.CreateMove(*pos, false)
+	c <- m
 }
 
 func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
@@ -106,9 +96,10 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 			return -score
 		}
 		//*/
-	} else if depth == 2 {
+
+	} else if depth == 1 {
 		return bestLeaf(b, move, depth, alpha, beta)
-	}
+	} //*/
 
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()
@@ -144,31 +135,36 @@ func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
 	b.SwitchPlayer()
 	defer b.SwitchPlayer()
 
-	moves := b.GetNextMoves(move.forcedCaptures)
-
-	var chans []chan int
-
-	for i := 0; i < len(moves); i++ {
-		chans = append(chans, make(chan int))
+	var movesPositions []Position
+	if (move.forcedCaptures != nil) {
+		movesPositions = move.forcedCaptures
+	} else {
+		movesPositions = b.GetSearchSpace()
 	}
 
-	for i, move := range(moves) {
-		if move.IsWin() {
-			return move.Score()
+	var chans []chan Move
+
+	for i := 0; i < len(movesPositions); i++ {
+		chans = append(chans, make(chan Move))
+	}
+
+	for i, pos := range(movesPositions) {
+		go multisearch(b, &pos, chans[i])
+	}
+
+	for i:= 0; i < len(movesPositions); i++ {
+		m := <-chans[i]
+		if m.IsWin() {
+			return m.Score()
 		}
-		b.DoMove(move)
 
-		var move2 = move
-		var b2 = *b
-		go multisearch(&b2, &move2, -beta, -alpha, chans[i])
-		b.UndoMove(move)
-	}
+		s := m.Score()
 
-	for i:= 0; i < len(moves); i++ {
-		s := <-chans[i]
+		/*
 		if s >= beta {
 			return s
 		}
+*/
 
 		if s > bestscore {
 			bestscore = s
@@ -178,41 +174,5 @@ func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
 		}
 	}
 
-	return bestscore
-}
-
-func searchdeeper2(b *AIBoard, move *Move, depth, alpha, beta int) int {
-
-	nodesSearched++
-	bestscore := math.MinInt32
-
-	b.depth++
-	defer func() {b.depth--}()
-
-	b.SwitchPlayer()
-	defer b.SwitchPlayer()
-
-	moves := b.GetNextMoves(move.forcedCaptures)
-
-	for _, move := range(moves) {
-		if move.IsWin() {
-			return move.Score()
-		}
-		b.DoMove(move)
-//		s := -move.Score()
-		s := -searchdeeper(b, &move, depth - 1, -beta, -alpha)
-		b.UndoMove(move)
-
-		if s >= beta {
-			return s
-		}
-
-		if s > bestscore {
-			bestscore = s
-			if s > alpha {
-				alpha = s
-			}
-		}
-	}
 	return bestscore
 }

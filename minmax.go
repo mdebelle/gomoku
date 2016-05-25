@@ -8,24 +8,11 @@ import (
 
 var nodesSearched = 0
 
-func printAlignments(alignTable *[2]Board) {
-	for y := 0; y < 19; y++ {
-		for x := 0; x < 19; x++ {
-			a, e, c, d := getScore(alignTable, x, y, player_one)
-			fmt.Printf("[%v ", a + e + c + d)
-			a, e, c, d = getScore(alignTable, x, y, player_two)
-			fmt.Printf("%v]", a + e + c + d)
-		}
-		fmt.Println()
-	}
-}
-
-func multisearch(b *AIBoard, pos *Position, c chan Move) {
-	m := b.CreateMove(*pos, false)
-	c <- m
-}
+var timer time.Time
 
 func search(values *Board, freeThree, alignTable *[2]Board, player, x, y, depth int, capture *[3]int, forcedCaptures []Position) (int, int, BoardData) {
+
+	timer = time.Now()
 
 	nodesSearched = 1
 	startTime := time.Now()
@@ -88,6 +75,9 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 			return math.MaxInt32
 		}
 		return -move.Score()
+	} else if time.Since(timer) >= time.Millisecond * 498 {
+		return 0
+		//return -move.Score()
 	}
 
 	b.SwitchPlayer()
@@ -95,7 +85,10 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 
 	moves := b.GetNextMoves(move.forcedCaptures)
 
-	for _, move := range(moves) {
+	for i, move := range(moves) {
+		if i > 12 {
+			break
+		}
 		if move.IsWin() {
 			return move.Score()
 		}
@@ -114,54 +107,5 @@ func searchdeeper(b *AIBoard, move *Move, depth, alpha, beta int) int {
 			}
 		}
 	}
-	return bestscore
-}
-
-func bestLeaf(b *AIBoard, move *Move, depth, alpha, beta int) int {
-
-	bestscore := math.MinInt32
-
-	b.SwitchPlayer()
-	defer b.SwitchPlayer()
-
-	var movesPositions []Position
-	if (move.forcedCaptures != nil) {
-		movesPositions = move.forcedCaptures
-	} else {
-		movesPositions = b.GetSearchSpace()
-	}
-
-	var chans []chan Move
-
-	for i := 0; i < len(movesPositions); i++ {
-		chans = append(chans, make(chan Move))
-	}
-
-	for i, pos := range(movesPositions) {
-		go multisearch(b, &pos, chans[i])
-	}
-
-	for i:= 0; i < len(movesPositions); i++ {
-		m := <-chans[i]
-		if m.IsWin() {
-			return m.Score()
-		}
-
-		s := m.Score()
-
-		//*
-		if s >= beta {
-			return s
-		}
-		//*/
-
-		if s > bestscore {
-			bestscore = s
-			if s > alpha {
-				alpha = s
-			}
-		}
-	}
-
 	return bestscore
 }

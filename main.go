@@ -6,7 +6,7 @@
 //   By: tmielcza <marvin@42.fr>                    +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/05/16 18:08:05 by tmielcza          #+#    #+#             //
-//   Updated: 2016/05/25 20:20:21 by tmielcza         ###   ########.fr       //
+//   Updated: 2016/05/25 21:32:16 by tmielcza         ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -24,7 +24,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl_ttf"
 )
 
-const debug = false
+const debugFlag = false
 
 const (
 	empty = 0
@@ -327,7 +327,7 @@ func run() int {
 
 			var x, y int
 			startTime := time.Now()
-			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 5, &capture, forcedCaptures)
+			x, y, better = search(&values, &freeThrees, &alignTable, player, px, py, 7, &capture, forcedCaptures)
 			searchTime = time.Since(startTime)
 			fmt.Printf("IA -> x[%d] y [%d]\n", x, y)
 			log.Printf("IA -> X |%3d| Y|%3d|\n", x, y)
@@ -341,7 +341,9 @@ func run() int {
 			} else {
 				fmt.Println("Can't play here.")
 			}
-			displayAverages()
+			if debugFlag {
+				displayAverages()
+			}
 			resetTimer()
 		}
 

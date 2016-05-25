@@ -47,7 +47,7 @@ func (this *Move) Position() Position {
 
 func (this *Move) Evaluate(board *AIBoard) {
 
-	if debug { defer timeFunc(time.Now(), "evaluateMove") }
+	if debugFlag { defer timeFunc(time.Now(), "evaluateMove") }
 
 	// TODO: Do captures before evaluating victory
 
@@ -140,7 +140,7 @@ func (board *AIBoard) isValidMove(x, y int) bool {
 
 func (board *AIBoard) GetSearchSpace() []Position {
 
-	if debug { defer timeFunc(time.Now(), "getSearchSpace") }
+	if debugFlag { defer timeFunc(time.Now(), "getSearchSpace") }
 
 	moves := make([]Position, 0, 10)
 	alreadyChecked := [19][19]bool {}
@@ -217,7 +217,7 @@ func (this *AIBoard) UndoMove(move Move) {
 func (board *AIBoard) UpdateFreeThrees(pos Position, captures []Position) {
 	// TODO: Two functions -> update from move and update from move cancelation
 	// TODO: And store changes. In fact, find a new method for free threes calculation / examination
-	if debug { defer timeFunc(time.Now(), "updateFreeThree") }
+	if debugFlag { defer timeFunc(time.Now(), "updateFreeThree") }
 
 	if (board.board[pos.y][pos.x] != empty) {
 		board.freeThrees[0][pos.y][pos.x] = 0
@@ -253,7 +253,7 @@ func (this *AIBoard) CanWin(pos Position) bool {
 
 func (board *AIBoard) Evaluate(move *Move) (score int, quiet bool) {
 
-	if debug { defer timeFunc(time.Now(), "evaluateBoard") }
+	if debugFlag { defer timeFunc(time.Now(), "evaluateBoard") }
 
 	// WIP: Quiescence
 	// Also check if there is forced captures on this turn
@@ -295,62 +295,3 @@ func (board *AIBoard) Evaluate(move *Move) (score int, quiet bool) {
 
 	return score + board.MyCapturesNb() * 100 - board.HisCapturesNb() * 100, quiet
 }
-
-/*
-func (board *AIBoard) checkCaptures(pos Position, player int) int {
-
-	if debug { defer timeFunc(time.Now(), "checkCaptures") }
-
-	x, y := pos.x, pos.y
-	capt := func (incx, incy int) int {
-		if !isInBounds(x + 3 * incx, y + 3 * incy) {
-			return 0
-		}
-		if	board.board[y + incy][x + incx] == -player &&
-			board.board[y + 2 * incy][x + 2 * incx] == -player &&
-		 	board.board[y + 3 * incy][x + 3 * incx] == player {
-				return 2
-		}
-		return 0
-	}
-	return  capt(-1, -1) + capt(1, 1) + capt(1, -1) + capt(-1, 1) +
-			capt(0, -1) + capt(0, 1) + capt(-1, 0) + capt(1, 0)
-}
-
-func (board *AIBoard) checkAlign(pos Position, player int) int {
-	if debug { defer timeFunc(time.Now(), "checkAlign") }
-
-	f := func (incx, incy, x, y int) int {
-		cnt := 0
-		x, y = x + incx, y + incy
-		for i := 0; i < 4; i++ {
-			if !isInBounds(x, y) || board.board[y][x] == -player {
-				return cnt
-			}
-			if board.board[y][x] == player {
-				cnt += 1
-			}
-			x += incx
-			y += incy
-		}
-		return cnt
-	}
-	max, t := 0, 0
-	x, y := pos.x, pos.y
-
-	max = f(-1, -1, x, y) + f(1, 1, x, y)
-	t = f(1, -1, x, y) + f(-1, 1, x, y)
-	if t > max {
-		max = t
-	}	
-	t = f(0, -1, x, y) + f(0, 1, x, y)
-	if t > max {
-		max = t
-	}
-	t = f(-1, 0, x, y) + f(1, 0, x, y)
-	if t > max {
-		return t
-	} 
-	return max
-}
-*/

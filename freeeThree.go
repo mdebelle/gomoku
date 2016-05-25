@@ -7,7 +7,7 @@ import (
 func checkDoubleThree(board, freeThrees *Board, x, y, color int) {
 	// TODO: SOOOOO SLOOOOOW do something
 
-	if debug { defer timeFunc(time.Now(), "checkDoubleThree") }
+	if debugFlag { defer timeFunc(time.Now(), "checkDoubleThree") }
 
 	const (
 		pat1 = 0x1A5 // -00--
@@ -103,7 +103,7 @@ func doesDoubleFreeThree(freeThrees *[2]Board, x, y, player int) bool {
 
 func updateFreeThrees(board *Board, freeThrees *[2]Board, x, y, player int, captures []Position) {
 	// TODO: Two functions -> update from move and update from move cancelation
-	if debug { defer timeFunc(time.Now(), "updateFreeThree") }
+	if debugFlag { defer timeFunc(time.Now(), "updateFreeThree") }
 
 	if (board[y][x] != empty) {
 		freeThrees[0][y][x] = 0
